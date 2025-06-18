@@ -3,9 +3,7 @@ from __future__ import annotations
 import json
 import copy
 
-from typing import Any
-
-from .shared_classes import (
+from .device import (
     XTDevice,
     XTDeviceStatusRange,
     XTDeviceFunction,
@@ -26,11 +24,10 @@ class XTMergingManager:
     #All the methods of this class (except merge device) take the LEFT device as a priority in case of conflict
 
 
-    @staticmethod
-    def merge_devices(device1: XTDevice, device2: XTDevice | None, multi_manager: MultiManager | None = None):
+
+    def merge_devices(device1: XTDevice, device2: XTDevice, multi_manager: MultiManager = None):
         msg_queue: list[str] = []
-        if device2 is None:
-            return None
+
         if (device1.device_source_priority is not None
             and device2.device_source_priority is not None
             and device2.device_source_priority < device1.device_source_priority):
@@ -64,14 +61,9 @@ class XTMergingManager:
         higher_priority.status = XTMergingManager.smart_merge(higher_priority.status, lower_priority.status, None, "status")
         higher_priority.local_strategy = XTMergingManager.smart_merge(higher_priority.local_strategy, lower_priority.local_strategy, msg_queue, "local_strategy")
         if msg_queue:
-            if multi_manager is not None:
-                multi_manager.device_watcher.report_message(device1.id, f"Messages for merging of {higher_bak} and {lower_bak}:")
-                for msg in msg_queue:
-                    multi_manager.device_watcher.report_message(device1.id, msg)
-            else:
-                LOGGER.warning(f"Messages for merging of {higher_bak} and {lower_bak}:")
-                for msg in msg_queue:
-                    LOGGER.warning(msg)
+            LOGGER.warning(f"Messages for merging of {higher_bak} and {lower_bak}:")
+            for msg in msg_queue:
+                LOGGER.warning(msg)
 
         #Now link the references so that they point to the same structure in memory
         lower_priority.status_range = higher_priority.status_range
@@ -88,7 +80,6 @@ class XTMergingManager:
             XTMergingManager._enforce_compatibility(higher_priority, higher_bak)
             higher_priority.force_compatibility = True
 
-    @staticmethod
     def _enforce_compatibility(device: XTDevice, enforcing_reference: XTDevice):
         for status in enforcing_reference.status:
             if status not in device.status:
@@ -96,11 +87,10 @@ class XTMergingManager:
                 for dpId in device.local_strategy:
                     status_code = device.local_strategy[dpId].get("status_code")
                     status_alias = device.local_strategy[dpId].get("status_code_alias", [])
-                    if status in status_alias and status_code is not None:
+                    if status in status_alias:
                         #Replace status_code with status in the device
-                        XTMergingManager._replace_status_with_another(device, str(status_code), status)
+                        XTMergingManager._replace_status_with_another(device, status_code, status)
     
-    @staticmethod
     def _replace_status_with_another(device: XTDevice, orig_status: str, new_status:str):
         #LOGGER.debug(f"Replacing {orig_status} with {new_status} in {device.name}")
         if orig_status in device.status_range:
@@ -133,7 +123,6 @@ class XTMergingManager:
                         config_item["statusFormat"] = json.dumps(status_formats_dict)
                 break
 
-    @staticmethod
     def _align_device_properties(device1: XTDevice, device2: XTDevice, msg_queue: list[str] | None = None):
         device1.name            = XTMergingManager.smart_merge(device1.name, device2.name, msg_queue, "device.name")
         device1.local_key       = XTMergingManager.smart_merge(device1.local_key, device2.local_key, msg_queue, "device.local_key")
@@ -168,7 +157,6 @@ class XTMergingManager:
             device2.support_local = True
         device1.data_model      = XTMergingManager.smart_merge(device1.data_model, device2.data_model, msg_queue, "device.data_model")
 
-    @staticmethod
     def _fix_incorrect_valuedescr(device1: XTDevice, device2: XTDevice):
         for code in device1.function:
             if code in device2.function:
@@ -215,16 +203,14 @@ class XTMergingManager:
             if value1_raw is not None or value2_raw is not None:
                 #At least one local strategy has a value descriptor
                 if value1_dict is None or value2_dict is None:
-                    if config_item1 is not None and config_item2 is not None:
-                        if value1_dict is not None:
-                            config_item2["valueDesc"] = config_item1["valueDesc"]
-                        elif value2_dict is not None:
-                            config_item1["valueDesc"] = config_item2["valueDesc"]
-                        else:
-                            config_item1["valueDesc"] = CloudFixes.get_fixed_value_descr(value1_raw, value2_raw)
-                            config_item2["valueDesc"] = config_item1["valueDesc"]
+                    if value1_dict is not None:
+                        config_item2["valueDesc"] = config_item1["valueDesc"]
+                    elif value2_dict is not None:
+                        config_item1["valueDesc"] = config_item2["valueDesc"]
+                    else:
+                        config_item1["valueDesc"] = CloudFixes.get_fixed_value_descr(value1_raw, value2_raw)
+                        config_item2["valueDesc"] = config_item1["valueDesc"]
 
-    @staticmethod
     def _align_valuedescr(device1: XTDevice, device2: XTDevice):
         for code in device1.status_range:
             if code in device2.status_range and device1.status_range[code].values != device2.status_range[code].values:
@@ -263,7 +249,6 @@ class XTMergingManager:
                         config_item1["valueDesc"] = json.dumps(value1)
                         config_item2["valueDesc"] = json.dumps(value2)
 
-    @staticmethod
     def _align_api_usage(device1: XTDevice, device2: XTDevice):
         for dpId in device1.local_strategy:
             if dpId in device2.local_strategy:
@@ -291,7 +276,6 @@ class XTMergingManager:
                         device1.local_strategy[dpId]["property_update"] = device2.local_strategy[dpId]["property_update"]
                         device1.local_strategy[dpId]["status_code"] = device2.local_strategy[dpId]["status_code"]
     
-    @staticmethod
     def _align_DPTypes(device1: XTDevice, device2: XTDevice):
         for key in device1.status_range:
             if key in device2.status_range:
@@ -347,7 +331,6 @@ class XTMergingManager:
                         config_item1["valueType"] = config_item2["valueType"]
                         config_item1["valueDesc"] = config_item2["valueDesc"]
     
-    @staticmethod
     def _prefer_non_default_value_convert(device1: XTDevice, device2: XTDevice):
         for dpId in device1.local_strategy:
             if dpId in device2.local_strategy:
@@ -359,8 +342,7 @@ class XTMergingManager:
                     else:
                         device2.local_strategy[dpId]["value_convert"] = device1.local_strategy[dpId]["value_convert"]
 
-    @staticmethod
-    def smart_merge(left: Any, right: Any, msg_queue: list[str] | None = None, path: str = "") -> Any:
+    def smart_merge(left: any, right: any, msg_queue: list[str] | None = None, path: str = "") -> any:
         if left is None or right is None:
             if left is not None:
                 return left
@@ -372,13 +354,13 @@ class XTMergingManager:
             if msg_queue is not None:
                 msg_queue.append(f"Merging tried to merge objects of different types: {type(left)} and {type(right)}, returning left ({path})")
             return left
-        if isinstance(left, XTDeviceStatusRange) and isinstance(right, XTDeviceStatusRange):
+        if isinstance(left, XTDeviceStatusRange):
             left.code = XTMergingManager.smart_merge(left.code, right.code, msg_queue, f"{path}.code")
             left.type = XTMergingManager.smart_merge(left.type, right.type, msg_queue, f"{path}.type")
             left.values = XTMergingManager.smart_merge(left.values, right.values, msg_queue, f"{path}.values")
             left.dp_id = XTMergingManager.smart_merge(left.dp_id, right.dp_id, msg_queue, f"{path}.dp_id")
             return left
-        elif isinstance(left, XTDeviceFunction) and isinstance(right, XTDeviceFunction):
+        elif isinstance(left, XTDeviceFunction):
             left.code = XTMergingManager.smart_merge(left.code, right.code, msg_queue, f"{path}.code")
             left.type = XTMergingManager.smart_merge(left.type, right.type, msg_queue, f"{path}.type")
             left.desc = XTMergingManager.smart_merge(left.desc, right.desc, msg_queue, f"{path}.desc")
@@ -386,7 +368,7 @@ class XTMergingManager:
             left.values = XTMergingManager.smart_merge(left.values, right.values, msg_queue, f"{path}.values")
             left.dp_id = XTMergingManager.smart_merge(left.dp_id, right.dp_id, msg_queue, f"{path}.dp_id")
             return left
-        elif isinstance(left, dict) and isinstance(right, dict):
+        elif isinstance(left, dict):
             for key in left:
                 if key in right:
                     left[key] = XTMergingManager.smart_merge(left[key], right[key], msg_queue, f"{path}[{key}]")
@@ -397,7 +379,7 @@ class XTMergingManager:
                 if key not in left:
                     left[key] = right[key]
             return left
-        elif isinstance(left, list) and isinstance(right, list):
+        elif isinstance(left, list):
             for key in left:
                 if key not in right:
                     right.append(key)
@@ -405,13 +387,13 @@ class XTMergingManager:
                 if key not in left:
                     left.append(key)
             return left
-        elif isinstance(left, tuple) and isinstance(right, tuple):
+        elif isinstance(left, tuple):
             left_list = list(left)
             right_list = list(right)
             return tuple(XTMergingManager.smart_merge(left_list, right_list, msg_queue))
-        elif isinstance(left, set) and isinstance(right, set):
+        elif isinstance(left, set):
             return left.update(right)
-        elif isinstance(left, str) and isinstance(right, str):
+        elif isinstance(left, str):
             #Strings could be strings or represent a json subtree
             try:
                 left_json = json.loads(left)

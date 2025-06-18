@@ -5,7 +5,8 @@
         },
         "error": {
             "invalid_auth": "Autentikasi tidak valid",
-            "login_error": "Kesalahan masuk ({code}): {msg}"
+            "login_error": "Kesalahan masuk ({code}): {msg}",
+            "reauth_successful": "Autentikasi ulang berhasil"
         },
         "step": {
             "reauth_user_code": {
@@ -14,9 +15,17 @@
                 },
                 "description": "Integrasi Tuya kini menggunakan metode masuk yang ditingkatkan. Untuk mengautentikasi ulang dengan akun Smart Life atau Tuya Smart Anda, Anda perlu memasukkan kode pengguna Anda.\n\nAnda dapat menemukan kodenya di aplikasi Smart Life atau Tuya Smart pada bagian **Settings** > **Account and Security**, lalu masukan kode yang ditampilkan pada bagian **User Code**. Kode pengguna peka terhadap huruf besar/kecil, pastikan untuk memasukkannya persis seperti yang ada di aplikasi."
             },
+            "scan": {
+                "description": "Gunakan aplikasi Smart Life atau aplikasi Tuya Smart untuk memindai kode QR berikut ini untuk menyelesaikan proses masuk.\n\nLanjutkan ke langkah berikutnya setelah Anda menyelesaikan langkah ini di aplikasi."
+            },
             "user": {
                 "data": {
-                    "user_code": "Kode pengguna"
+                    "access_id": "ID Akses Tuya IoT",
+                    "access_secret": "Kode Rahasia Akses Tuya IoT",
+                    "country_code": "Negara",
+                    "password": "Kata Sandi",
+                    "user_code": "Kode pengguna",
+                    "username": "Akun"
                 },
                 "description": "Masukkan kode pengguna Smart Life atau Tuya Smart Anda.\n\nAnda dapat menemukan kode ini di aplikasi Smart Life atau aplikasi Tuya Smart di layar **Pengaturan** > **Akun dan Keamanan**, dan masukkan kode yang ditunjukkan pada bidang **Kode Pengguna**. Kode pengguna peka terhadap huruf besar/kecil, pastikan untuk memasukkannya persis seperti yang ditunjukkan di aplikasi."
             }
@@ -205,6 +214,13 @@
                     "1": "Sensitivitas tinggi"
                 }
             },
+            "fan_angle": {
+                "state": {
+                    "30": "30\u00b0",
+                    "60": "60\u00b0",
+                    "90": "90\u00b0"
+                }
+            },
             "fingerbot_mode": {
                 "name": "Mode",
                 "state": {
@@ -297,9 +313,9 @@
             "motion_sensitivity": {
                 "name": "Sensitivitas deteksi gerak",
                 "state": {
-                    "0": "Rendah",
-                    "1": "Sedang",
-                    "2": "Tinggi"
+                    "0": "Sensitivitas rendah",
+                    "1": "Sensitivitas sedang",
+                    "2": "Sensitivitas tinggi"
                 }
             },
             "record_mode": {
@@ -482,7 +498,18 @@
                 }
             },
             "status": {
-                "name": "Status"
+                "name": "Status",
+                "state": {
+                    "boiling_temp": "Suhu mendidih",
+                    "cooling": "Mendinginkan",
+                    "heating": "Memanaskan",
+                    "heating_temp": "Suhu pemanas",
+                    "reserve_1": "Cadangan 1",
+                    "reserve_2": "Cadangan 2",
+                    "reserve_3": "Cadangan 3",
+                    "standby": "Siaga",
+                    "warm": "Pelestarian panas"
+                }
             },
             "temperature": {
                 "name": "Suhu"
@@ -503,7 +530,7 @@
                 "name": "Total waktu penyiraman"
             },
             "voc": {
-                "name": "Senyawa organik yang mudah menguap"
+                "name": "VOC"
             },
             "voltage": {
                 "name": "Tegangan"
@@ -696,6 +723,28 @@
             "wide_dynamic_range": {
                 "name": "Rentang dinamis luas"
             }
+        }
+    },
+    "issues": {
+        "service_deprecation_turn_off": {
+            "fix_flow": {
+                "step": {
+                    "confirm": {
+                        "title": "Dukungan vakum Tuya untuk vacuum.turn_off sedang dihapus"
+                    }
+                }
+            },
+            "title": "Dukungan vakum Tuya untuk vacuum.turn_off sedang dihapus"
+        },
+        "service_deprecation_turn_on": {
+            "fix_flow": {
+                "step": {
+                    "confirm": {
+                        "title": "Dukungan vakum Tuya untuk vacuum.turn_on sedang dihapus"
+                    }
+                }
+            },
+            "title": "Dukungan vakum Tuya untuk vacuum.turn_on sedang dihapus"
         }
     }
 }

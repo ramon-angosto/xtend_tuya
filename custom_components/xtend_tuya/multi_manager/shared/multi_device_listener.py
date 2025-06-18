@@ -12,8 +12,6 @@ from ...const import (
 
 from ..multi_manager import (
     MultiManager,
-)
-from .shared_classes import (
     XTDevice,
 )
 
@@ -35,11 +33,7 @@ class MultiDeviceListener:
 
     def trigger_device_discovery(self, device: XTDevice, signal_list: list[str], updated_status_properties: list[str] | None = None):
         for signal in signal_list:
-            try:
-                dispatcher_send(self.hass, f"{signal}_{device.id}", updated_status_properties)
-            except Exception as e:
-                #Could happen upon restart of HA
-                LOGGER.debug(f"Could not send {signal}_{device.id} (updated_status_properties = {updated_status_properties}) to dispatch: {e}")
+            dispatcher_send(self.hass, f"{signal}_{device.id}", updated_status_properties)
 
     def add_device(self, device: XTDevice):
         self.hass.add_job(self.async_remove_device, device.id)
@@ -57,7 +51,7 @@ class MultiDeviceListener:
         for account in self.multi_manager.accounts.values():
             for account_identifier in account.get_device_registry_identifiers():
                 if account_identifier not in account_identifiers:
-                    identifiers.add((account_identifier, device_id))
+                    identifiers.add(tuple(account_identifier, device_id))
                     account_identifiers.add(account_identifier)
         device_entry = device_registry.async_get_device(
             identifiers=identifiers

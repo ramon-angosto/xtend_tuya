@@ -5,11 +5,18 @@
         },
         "error": {
             "invalid_auth": "Ongeldige authenticatie",
-            "login_error": "Aanmeldingsfout ({code}): {msg}"
+            "login_error": "Aanmeldingsfout ({code}): {msg}",
+            "reauth_successful": "Herauthenticatie geslaagd"
         },
         "step": {
             "user": {
-                "description": "Voer je gebruikerscode van Smart Life of Tuya in.\n\nJe kunt deze code vinden in de Smart Life-app of de Tuya-app op het **Instellingen** > **Account en Beveiliging** scherm. Vul de getoonde code in bij **Gebruikerscode**. Het veld is hoofdlettergevoelig, let dus op dat je het exact zo invoert als het in de app getoond wordt."
+                "data": {
+                    "access_id": "Tuya IoT-toegangs-ID",
+                    "access_secret": "Tuya IoT Access Secret",
+                    "country_code": "Land",
+                    "password": "Wachtwoord",
+                    "username": "Gebruikersnaam"
+                }
             }
         }
     },
@@ -197,12 +204,6 @@
                     "2": "Aan"
                 }
             },
-            "blanket_level": {
-                "state": {
-                    "level_1": "Laag",
-                    "level_10": "Hoog"
-                }
-            },
             "brightness": {
                 "name": "Helderheid"
             },
@@ -243,6 +244,13 @@
                 "state": {
                     "0": "Lage gevoeligheid",
                     "1": "Hoge gevoeligheid"
+                }
+            },
+            "fan_angle": {
+                "state": {
+                    "30": "30\u00b0",
+                    "60": "60\u00b0",
+                    "90": "90\u00b0"
                 }
             },
             "fingerbot_mode": {
@@ -288,7 +296,7 @@
             "humidifier_spray_mode": {
                 "name": "Spraymode",
                 "state": {
-                    "auto": "Automatisch",
+                    "auto": "Auto",
                     "health": "Gezondheid",
                     "humidity": "Vochtigheid",
                     "sleep": "Slaap",
@@ -342,9 +350,9 @@
             "motion_sensitivity": {
                 "name": "Gevoeligheid bewegingsdetectie",
                 "state": {
-                    "0": "Laag",
-                    "1": "Gemiddeld",
-                    "2": "Hoog"
+                    "0": "Lage gevoeligheid",
+                    "1": "Gemiddelde gevoeligheid",
+                    "2": "Hoge gevoeligheid"
                 }
             },
             "record_mode": {
@@ -425,16 +433,6 @@
                     "great": "Uitstekend",
                     "mild": "Mild",
                     "severe": "Ernstig"
-                }
-            },
-            "air_quality_index": {
-                "state": {
-                    "level_1": "Niveau 1",
-                    "level_2": "Niveau 2",
-                    "level_3": "Niveau 3",
-                    "level_4": "Niveau 4",
-                    "level_5": "Niveau 5",
-                    "level_6": "Niveau 6"
                 }
             },
             "battery": {
@@ -563,13 +561,21 @@
                 }
             },
             "status": {
-                "name": "Status"
+                "name": "Status",
+                "state": {
+                    "boiling_temp": "Temperatuur boiler",
+                    "cooling": "Koelen",
+                    "heating": "Verwarmen",
+                    "heating_temp": "Opwarmtemperatuur",
+                    "reserve_1": "Reserve 1",
+                    "reserve_2": "Reserve 2",
+                    "reserve_3": "Reserve 3",
+                    "standby": "Stand-by",
+                    "warm": "Warmtebesparing"
+                }
             },
             "temperature": {
                 "name": "Temperatuur"
-            },
-            "temperature_external": {
-                "name": "Sonde temperatuur"
             },
             "total_absorption_particles": {
                 "name": "Totale opname van deeltjes"
@@ -593,7 +599,7 @@
                 "name": "Totaal aan vluchtige organische stof"
             },
             "voc": {
-                "name": "Vluchtige organische stoffen"
+                "name": "VOC's"
             },
             "voltage": {
                 "name": "Spanning"
@@ -807,6 +813,32 @@
             "wide_dynamic_range": {
                 "name": "Breed dynamisch bereik"
             }
+        }
+    },
+    "issues": {
+        "service_deprecation_turn_off": {
+            "description": "Tuya stofzuiger ondersteuning voor de vacuum.turn_off service is verouderd en zal worden verwijderd in Home Assistant 2024.2; Pas a.u.b. automatiseringen of scripts aan die deze service gebruiken om inplaats hiervan vacuum.stop te gebruiken en selecteer toepassen om het issue als opgelost te markeren.",
+            "fix_flow": {
+                "step": {
+                    "confirm": {
+                        "description": "Tuya stofzuiger ondersteuning voor de vacuum.turn_off service is verouderd en zal worden verwijderd in Home Assistant 2024.2; Pas a.u.b. automatiseringen of scripts aan die deze service gebruiken om inplaats hiervan vacuum.stop te gebruiken en selecteer toepassen om het issue als opgelost te markeren.",
+                        "title": "Tuya stofzuiger ondersteuning voor de vacuum.turn_off service wordt verwijderd"
+                    }
+                }
+            },
+            "title": "Tuya stofzuiger ondersteuning voor de vacuum.turn_off service wordt verwijderd"
+        },
+        "service_deprecation_turn_on": {
+            "description": "Tuya stofzuiger ondersteuning voor de vacuum.turn_on service is verouderd en zal worden verwijderd in Home Assistant 2024.2; Pas a.u.b. automatiseringen of scripts aan die deze service gebruiken om inplaats hiervan vacuum.start te gebruiken en selecteer toepassen om het issue als opgelost te markeren.",
+            "fix_flow": {
+                "step": {
+                    "confirm": {
+                        "description": "Tuya stofzuiger ondersteuning voor de vacuum.turn_on service is verouderd en zal worden verwijderd in Home Assistant 2024.2; Pas a.u.b. automatiseringen of scripts aan die deze service gebruiken om inplaats hiervan vacuum.start te gebruiken en selecteer toepassen om het issue als opgelost te markeren.",
+                        "title": "Tuya stofzuiger ondersteuning voor de vacuum.turn_on service wordt verwijderd"
+                    }
+                }
+            },
+            "title": "Tuya stofzuiger ondersteuning voor de vacuum.turn_on service wordt verwijderd"
         }
     }
 }

@@ -2,6 +2,13 @@
     "config": {
         "error": {
             "invalid_auth": "Ugyldig godkendelse"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "password": "Adgangskode"
+                }
+            }
         }
     },
     "entity": {
@@ -28,6 +35,8 @@
             "vacuum_cistern": {
                 "state": {
                     "closed": "Lukket",
+                    "high": "H\u00f8j",
+                    "low": "Lav",
                     "middle": "Midt"
                 }
             },
