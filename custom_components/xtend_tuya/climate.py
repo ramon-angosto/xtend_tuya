@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from homeassistant.components.climate.const import (
+
+from homeassistant.components.climate import (
     ClimateEntityFeature,
     HVACMode,
 )
@@ -22,7 +23,7 @@ from .multi_manager.multi_manager import (
     MultiManager,
     XTDevice,
 )
-from .const import TUYA_DISCOVERY_NEW, XTDPCode, DPType, CROSS_CATEGORY_DEVICE_DESCRIPTOR
+from .const import TUYA_DISCOVERY_NEW, XTDPCode, DPType
 from .ha_tuya_integration.tuya_integration_imports import (
     TuyaClimateEntity,
     TuyaClimateEntityDescription,
@@ -35,18 +36,8 @@ from .entity import (
 @dataclass(frozen=True, kw_only=True)
 class XTClimateEntityDescription(TuyaClimateEntityDescription):
     """Describe an Tuya climate entity."""
-    switch_only_hvac_mode: HVACMode
 
-    def get_entity_instance(self, 
-                            device: XTDevice, 
-                            device_manager: MultiManager, 
-                            description: XTClimateEntityDescription,
-                            system_temperature_unit: UnitOfTemperature
-                            ) -> XTClimateEntity:
-        return XTClimateEntity(device=device, 
-                              device_manager=device_manager, 
-                              description=description,
-                              system_temperature_unit = system_temperature_unit)
+    switch_only_hvac_mode: HVACMode
 
 
 CLIMATE_DESCRIPTIONS: dict[str, XTClimateEntityDescription] = {
@@ -58,30 +49,24 @@ async def async_setup_entry(
 ) -> None:
     """Set up Tuya climate dynamically through Tuya discovery."""
     hass_data = entry.runtime_data
-
-    if entry.runtime_data.multi_manager is None or hass_data.manager is None:
-        return
     
     merged_descriptions = CLIMATE_DESCRIPTIONS
     for new_descriptor in entry.runtime_data.multi_manager.get_platform_descriptors_to_merge(Platform.CLIMATE):
         merged_descriptions = append_dictionnaries(merged_descriptions, new_descriptor)
 
     @callback
-    def async_discover_device(device_map, restrict_dpcode: str | None = None) -> None:
+    def async_discover_device(device_map) -> None:
         """Discover and add a discovered Tuya climate."""
-        if hass_data.manager is None:
-            return
-        if restrict_dpcode is not None:
-            return None
         entities: list[XTClimateEntity] = []
         device_ids = [*device_map]
         for device_id in device_ids:
             if device := hass_data.manager.device_map.get(device_id):
                 if device and device.category in merged_descriptions:
                     entities.append(
-                        XTClimateEntity.get_entity_instance(merged_descriptions[device.category], 
+                        XTClimateEntity(
                             device,
                             hass_data.manager,
+                            XTClimateEntityDescription(**merged_descriptions[device.category].__dict__),
                             hass.config.units.temperature_unit,
                         )
                     )
@@ -103,15 +88,13 @@ class XTClimateEntity(XTEntity, TuyaClimateEntity):
         device: XTDevice,
         device_manager: MultiManager,
         description: XTClimateEntityDescription,
-        system_temperature_unit: UnitOfTemperature
+        system_temperature_unit: UnitOfTemperature,
     ) -> None:
         """Determine which values to use."""
         super(XTClimateEntity, self).__init__(device, device_manager, description, system_temperature_unit)
-        super(XTEntity, self).__init__(device, device_manager, description, system_temperature_unit) # type: ignore
         self.device = device
         self.device_manager = device_manager
         self.entity_description = description
-        self._attr_preset_modes = None
 
         # Determine HVAC modes
         self._attr_hvac_modes: list[HVACMode] = []
@@ -140,7 +123,7 @@ class XTClimateEntity(XTEntity, TuyaClimateEntity):
             new_hvac_to_tuya = {}
             for ha_mode in self._hvac_to_tuya:
                 if self._hvac_to_tuya[ha_mode] in unknown_hvac_modes:
-                    self._attr_hvac_modes.remove(HVACMode(ha_mode))
+                    self._attr_hvac_modes.remove(ha_mode)
                 else:
                     new_hvac_to_tuya[ha_mode] = self._hvac_to_tuya[ha_mode]
             self._hvac_to_tuya = new_hvac_to_tuya
@@ -154,10 +137,4 @@ class XTClimateEntity(XTEntity, TuyaClimateEntity):
                 HVACMode.OFF,
                 description.switch_only_hvac_mode,
             ]
-        self.device_manager.device_watcher.report_message(self.device.id, f"_hvac_to_tuya: {self._hvac_to_tuya if hasattr(self, "_hvac_to_tuya") else "NONE"} <=> _attr_hvac_modes: {self._attr_hvac_modes if hasattr(self, "_attr_hvac_modes") else "NONE"} <=> _attr_preset_modes: {self._attr_preset_modes if hasattr(self, "_attr_preset_modes") else "NONE"}")
-
-    @staticmethod
-    def get_entity_instance(description: XTClimateEntityDescription, device: XTDevice, device_manager: MultiManager, system_temperature_unit: UnitOfTemperature) -> XTClimateEntity:
-        if hasattr(description, "get_entity_instance") and callable(getattr(description, "get_entity_instance")):
-            return description.get_entity_instance(device, device_manager, description, system_temperature_unit)
-        return XTClimateEntity(device, device_manager, XTClimateEntityDescription(**description.__dict__), system_temperature_unit)
+        self.device_manager.device_watcher.report_message(self.device.id, f"_hvac_to_tuya: {self._hvac_to_tuya} <=> _attr_hvac_modes: {self._attr_hvac_modes} <=> _attr_preset_modes: {self._attr_preset_modes}")

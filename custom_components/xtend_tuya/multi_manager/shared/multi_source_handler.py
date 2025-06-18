@@ -1,6 +1,5 @@
 from __future__ import annotations
 import copy
-from typing import Any
 
 from ..multi_manager import MultiManager
 from ...const import LOGGER  # noqa: F401
@@ -26,7 +25,7 @@ class MultiSourceCodeCounter:
         if not source_counter_found:
             self.source_counter_list.append(SourceCodeCounter(source))
     
-    def get_allowed_source(self) -> str | None:
+    def get_allowed_source(self) -> str:
         last_allowed_source_count = 0
         highest_source_count = 0
         highest_source = None
@@ -63,8 +62,8 @@ class MultiSourceHandler:
             return
         
         for item in status_in:
-            code, _, _, result_ok = self.multi_manager._read_code_dpid_value_from_state(dev_id, item, False, True)
-            if not result_ok or code is None:
+            code, dpId, value, result_ok = self.multi_manager._read_code_dpid_value_from_state(dev_id, item, False, True)
+            if not result_ok:
                 continue
 
             for virtual_state in virtual_states:
@@ -72,7 +71,7 @@ class MultiSourceHandler:
                     self._prepare_structure_for_code(dev_id, code)
                     self.device_map[dev_id][code].register_source_message(source)
 
-    def filter_status_list(self, dev_id: str, original_source: str, status_in: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def filter_status_list(self, dev_id: str, original_source: str, status_in) -> str:
         status_list = copy.deepcopy(status_in)
         device = self.multi_manager.device_map.get(dev_id, None)
         if not device:
@@ -85,8 +84,8 @@ class MultiSourceHandler:
         
         i = 0
         for item in status_list:
-            code, _, _, result_ok = self.multi_manager._read_code_dpid_value_from_state(dev_id, item, False, True)
-            if not result_ok or code is None:
+            code, dpId, value, result_ok = self.multi_manager._read_code_dpid_value_from_state(dev_id, item, False, True)
+            if not result_ok:
                 continue
 
             for virtual_state in virtual_states:

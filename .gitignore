@@ -1,4 +1,5 @@
 .devcontainer/
 *.log
 *.logs
+*.idea
 __pycache__

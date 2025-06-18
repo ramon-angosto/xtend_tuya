@@ -1,14 +1,25 @@
 {
     "config": {
         "abort": {
-            "reauth_successful": "L'autenticazione ha avuto successo"
+            "reauth_successful": "La riautenticazione ha avuto successo"
         },
         "error": {
             "invalid_auth": "Autenticazione non valida",
-            "login_error": "Errore di accesso ({code}): {msg}"
+            "login_error": "Errore di accesso ({code}): {msg}",
+            "reauth_successful": "La riautenticazione ha avuto successo"
         },
         "step": {
+            "scan": {
+                "description": "Usa l'app Smart Life o l'app Tuya Smart per scansionare il seguente codice QR per completare l'accesso.\n\nContinua con il passaggio successivo dopo aver completato questo passaggio nell'app."
+            },
             "user": {
+                "data": {
+                    "access_id": "Tuya IoT Access ID",
+                    "access_secret": "Tuya IoT Access Secret",
+                    "country_code": "Nazione",
+                    "password": "Password",
+                    "username": "Account"
+                },
                 "description": "Inserisci il tuo codice utente Smart Life o Tuya Smart.\n\nPuoi trovare questo codice nell'app Smart Life o nell'app Tuya Smart nella schermata **Impostazioni** > **Account e sicurezza** e inserisci il codice mostrato nel campo **Codice utente**. Il codice utente fa distinzione tra maiuscole e minuscole, assicurati di inserirlo esattamente come mostrato nell'app."
             }
         }
@@ -68,7 +79,7 @@
         },
         "cover": {
             "blind": {
-                "name": "Veneziana"
+                "name": "Scuro"
             },
             "curtain": {
                 "name": "Tenda"
@@ -239,6 +250,13 @@
                     "1": "Alta sensibilit\u00e0"
                 }
             },
+            "fan_angle": {
+                "state": {
+                    "30": "30\u00b0",
+                    "60": "60\u00b0",
+                    "90": "90\u00b0"
+                }
+            },
             "fingerbot_mode": {
                 "name": "Modalit\u00e0",
                 "state": {
@@ -282,6 +300,7 @@
             "humidifier_spray_mode": {
                 "name": "Modalit\u00e0 spray",
                 "state": {
+                    "auto": "Auto",
                     "health": "Salute",
                     "humidity": "Umidit\u00e0",
                     "sleep": "Sonno",
@@ -333,7 +352,12 @@
                 "name": "Modalit\u00e0"
             },
             "motion_sensitivity": {
-                "name": "Sensibilit\u00e0 di rilevamento del movimento"
+                "name": "Sensibilit\u00e0 di rilevamento del movimento",
+                "state": {
+                    "0": "Bassa sensibilit\u00e0",
+                    "1": "Sensibilit\u00e0 media",
+                    "2": "Alta sensibilit\u00e0"
+                }
             },
             "record_mode": {
                 "name": "Modalit\u00e0 di registrazione",
@@ -363,6 +387,8 @@
                 "name": "Regolazione del serbatoio dell'acqua",
                 "state": {
                     "closed": "Chiuso/a",
+                    "high": "Alto",
+                    "low": "Basso",
                     "middle": "Medio"
                 }
             },
@@ -411,12 +437,6 @@
             },
             "weather_delay": {
                 "state": {
-                    "120h": "120h",
-                    "144h": "144h",
-                    "168h": "168h",
-                    "24h": "24h",
-                    "48h": "48h",
-                    "72h": "72h",
                     "96h": "96 ore",
                     "cancel": "Annulla"
                 }
@@ -430,17 +450,6 @@
                     "great": "Grande",
                     "mild": "Lieve",
                     "severe": "Grave"
-                }
-            },
-            "air_quality_index": {
-                "name": "Indice di qualit\u00e0 dell'aria",
-                "state": {
-                    "level_1": "Livello 1",
-                    "level_2": "Livello 2",
-                    "level_3": "Livello 3",
-                    "level_4": "Livello 4",
-                    "level_5": "Livello 5",
-                    "level_6": "Livello 6"
                 }
             },
             "battery": {
@@ -569,13 +578,21 @@
                 }
             },
             "status": {
-                "name": "Stato"
+                "name": "Stato",
+                "state": {
+                    "boiling_temp": "Temperatura di ebollizione",
+                    "cooling": "Raffreddamento",
+                    "heating": "Riscaldamento",
+                    "heating_temp": "Temperatura di riscaldamento",
+                    "reserve_1": "Riserva 1",
+                    "reserve_2": "Riserva 2",
+                    "reserve_3": "Riserva 3",
+                    "standby": "In attesa",
+                    "warm": "Conservazione del calore"
+                }
             },
             "temperature": {
                 "name": "Temperatura"
-            },
-            "temperature_external": {
-                "name": "Temperatura della sonda"
             },
             "total_absorption_particles": {
                 "name": "Assorbimento totale delle particelle"
@@ -819,6 +836,32 @@
             "wide_dynamic_range": {
                 "name": "Ampia gamma dinamica"
             }
+        }
+    },
+    "issues": {
+        "service_deprecation_turn_off": {
+            "description": "Il supporto aspirapolvere Tuya per il servizio vacuum.turn_off \u00e8 deprecato e verr\u00e0 rimosso in Home Assistant 2024.2; Modifica qualsiasi automazione o script che utilizza il servizio per chiamare invece vacuum.stop e seleziona Invia di seguito per contrassegnare il problema come risolto.",
+            "fix_flow": {
+                "step": {
+                    "confirm": {
+                        "description": "Il supporto dell'aspirapolvere Tuya per il servizio vacuum.turn_off \u00e8 deprecato e verr\u00e0 rimosso in Home Assistant 2024.2; Modifica qualsiasi automazione o script che utilizza il servizio per chiamare invece vacuum.stop e seleziona Invia di seguito per contrassegnare il problema come risolto.",
+                        "title": "Il supporto aspirapolvere Tuya per vacuum.turn_off \u00e8 stato rimosso"
+                    }
+                }
+            },
+            "title": "Il supporto aspirapolvere Tuya per vacuum.turn_off \u00e8 stato rimosso"
+        },
+        "service_deprecation_turn_on": {
+            "description": "Il supporto aspirapolvere Tuya per il servizio vacuum.turn_on \u00e8 deprecato e verr\u00e0 rimosso in Home Assistant 2024.2; Modifica qualsiasi automazione o script che utilizza il servizio per chiamare invece vacuum.start e seleziona Invia di seguito per contrassegnare il problema come risolto.",
+            "fix_flow": {
+                "step": {
+                    "confirm": {
+                        "description": "Il supporto dell'aspirapolvere Tuya per il servizio vacuum.turn_on \u00e8 deprecato e verr\u00e0 rimosso in Home Assistant 2024.2; Modifica qualsiasi automazione o script che utilizza il servizio per chiamare invece vacuum.start e seleziona Invia di seguito per contrassegnare il problema come risolto.",
+                        "title": "Il supporto aspirapolvere Tuya per vacuum.turn_on \u00e8 stato rimosso"
+                    }
+                }
+            },
+            "title": "Il supporto aspirapolvere Tuya per vacuum.turn_on \u00e8 stato rimosso"
         }
     }
 }

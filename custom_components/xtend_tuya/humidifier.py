@@ -18,7 +18,7 @@ from .multi_manager.multi_manager import (
     MultiManager,
     XTDevice,
 )
-from .const import TUYA_DISCOVERY_NEW, CROSS_CATEGORY_DEVICE_DESCRIPTOR
+from .const import TUYA_DISCOVERY_NEW
 from .ha_tuya_integration.tuya_integration_imports import (
     TuyaHumidifierEntity,
     TuyaHumidifierEntityDescription,
@@ -30,15 +30,7 @@ from .entity import (
 @dataclass(frozen=True)
 class XTHumidifierEntityDescription(TuyaHumidifierEntityDescription):
     """Describe an XT (de)humidifier entity."""
-    
-    def get_entity_instance(self, 
-                            device: XTDevice, 
-                            device_manager: MultiManager, 
-                            description: XTHumidifierEntityDescription
-                            ) -> XTHumidifierEntity:
-        return XTHumidifierEntity(device=device, 
-                              device_manager=device_manager, 
-                              description=description)
+    pass
 
 
 HUMIDIFIERS: dict[str, XTHumidifierEntityDescription] = {
@@ -51,27 +43,20 @@ async def async_setup_entry(
     """Set up Tuya (de)humidifier dynamically through Tuya discovery."""
     hass_data = entry.runtime_data
 
-    if entry.runtime_data.multi_manager is None or hass_data.manager is None:
-        return
-
     merged_categories = HUMIDIFIERS
     for new_descriptor in entry.runtime_data.multi_manager.get_platform_descriptors_to_merge(Platform.HUMIDIFIER):
         merged_categories = append_dictionnaries(merged_categories, new_descriptor)
 
     @callback
-    def async_discover_device(device_map, restrict_dpcode: str | None = None) -> None:
+    def async_discover_device(device_map) -> None:
         """Discover and add a discovered Tuya (de)humidifier."""
-        if hass_data.manager is None:
-            return
-        if restrict_dpcode is not None:
-            return None
         entities: list[XTHumidifierEntity] = []
         device_ids = [*device_map]
         for device_id in device_ids:
             if device := hass_data.manager.device_map.get(device_id):
                 if description := merged_categories.get(device.category):
                     entities.append(
-                        XTHumidifierEntity.get_entity_instance(description, device, hass_data.manager)
+                        XTHumidifierEntity(device, hass_data.manager, XTHumidifierEntityDescription(**description.__dict__))
                     )
         async_add_entities(entities)
 
@@ -93,13 +78,6 @@ class XTHumidifierEntity(XTEntity, TuyaHumidifierEntity):
         description: XTHumidifierEntityDescription,
     ) -> None:
         super(XTHumidifierEntity, self).__init__(device, device_manager, description)
-        super(XTEntity, self).__init__(device, device_manager, description) # type: ignore
         self.device = device
         self.device_manager = device_manager
         self.entity_description = description
-
-    @staticmethod
-    def get_entity_instance(description: XTHumidifierEntityDescription, device: XTDevice, device_manager: MultiManager) -> XTHumidifierEntity:
-        if hasattr(description, "get_entity_instance") and callable(getattr(description, "get_entity_instance")):
-            return description.get_entity_instance(device, device_manager, description)
-        return XTHumidifierEntity(device, device_manager, XTHumidifierEntityDescription(**description.__dict__))

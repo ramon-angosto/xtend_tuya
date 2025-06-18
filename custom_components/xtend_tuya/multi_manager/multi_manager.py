@@ -6,7 +6,7 @@ import os
 from typing import Any, Literal, Optional
 
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 
 from tuya_iot.device import (
     PROTOCOL_DEVICE_REPORT,
@@ -18,7 +18,62 @@ from ..const import (
     AllowedPlugins,
     XTDeviceEntityFunctions,
     XTDeviceSourcePriority,
-    XTMultiManagerProperties,
+)
+
+from .shared.import_stub import (
+    MultiManager,
+    XTConfigEntry,
+    XTDevice,
+)
+
+from .shared.device import (
+    XTDevice  # noqa: F811
+)
+
+from .shared.shared_classes import (
+    DeviceWatcher,
+    XTConfigEntry,  # noqa: F811
+    XTDeviceMap,
+)
+
+from .shared.debug.debug_helper import (
+    DebugHelper,
+)
+
+from .shared.merging_manager import (
+    XTMergingManager,
+)
+
+from .shared.cloud_fix import (
+    CloudFixes,
+)
+
+from .shared.multi_source_handler import (
+    MultiSourceHandler,
+)
+
+from .shared.multi_mq import (
+    MultiMQTTQueue,
+)
+
+from .shared.multi_device_listener import (
+    MultiDeviceListener,
+)
+
+from .shared.multi_virtual_state_handler import (
+    XTVirtualStateHandler,
+)
+
+from .shared.multi_virtual_function_handler import (
+    XTVirtualFunctionHandler,
+)
+
+from ..util import (
+    append_lists,
+)
+
+from .shared.interface.device_manager import (
+    XTDeviceManagerInterface,
 )
     
 class MultiManager:  # noqa: F811
@@ -33,13 +88,10 @@ class MultiManager:  # noqa: F811
         self.accounts: dict[str, XTDeviceManagerInterface] = {}
         self.master_device_map: dict[str, XTDevice] = {}
         self.is_ready_for_messages = False
-        self.pending_messages: list[tuple[str, dict]] = []
+        self.pending_messages: list[tuple[str, str]] = []
         self.devices_shared: dict[str, XTDevice] = {}
         self.debug_helper = DebugHelper(self)
         self.scene_id: list[str] = []
-        self.general_properties: dict[str, Any] = {}
-        self.entity_parsers: dict[str, XTCustomEntityParser] = {}
-        self.post_setup_callbacks: list = []
 
     @property
     def device_map(self):
@@ -49,7 +101,7 @@ class MultiManager:  # noqa: F811
     def mq(self):
         return self.multi_mqtt_queue
 
-    def get_account_by_name(self, account_name: str | None) -> XTDeviceManagerInterface | None:
+    def get_account_by_name(self, account_name:str) -> XTDeviceManagerInterface | None:
         if account_name in self.accounts:
             return self.accounts[account_name]
         return None
@@ -73,9 +125,6 @@ class MultiManager:  # noqa: F811
         for account in self.accounts.values():
             await self.hass.async_add_executor_job(account.on_post_setup)
     
-    async def setup_entity_parsers(self, hass: HomeAssistant) -> None:
-        await XTCustomEntityParser.setup_entity_parsers(hass, self)
-    
     def get_domain_identifiers_of_device(self, device_id: str) -> list:
         return_list: list = []
         for account in self.accounts.values():
@@ -87,15 +136,11 @@ class MultiManager:  # noqa: F811
         for account in self.accounts.values():
             if new_descriptors := account.get_platform_descriptors_to_merge(platform):
                 return_list.append(new_descriptors)
-        for entity_parser in self.entity_parsers.values():
-            if new_descriptors := entity_parser.get_descriptors_to_merge(platform):
-                return_list.append(new_descriptors)
         return return_list
     
     def update_device_cache(self):
         self.is_ready_for_messages = False
-        thread_manager: XTThreadingManager = XTThreadingManager()
-        def update_device_cache_thread(manager: XTDeviceManagerInterface) -> None:
+        for key, manager in self.accounts.items():
             manager.update_device_cache()
 
             #New devices have been created in their own device maps
@@ -103,11 +148,7 @@ class MultiManager:  # noqa: F811
             for device_map in manager.get_available_device_maps():
                 for device_id in device_map:
                     device_map[device_id] = manager.convert_to_xt_device(device_map[device_id], device_map.device_source_priority)
-        for manager in self.accounts.values():
-            thread_manager.add_thread(update_device_cache_thread, manager=manager)
         
-        thread_manager.start_and_wait()
-
         #Register all devices in the master device map
         self._update_master_device_map()
 
@@ -171,7 +212,7 @@ class MultiManager:  # noqa: F811
             return None
         if ( code in device.status_range 
             and hasattr(device.status_range[code], "dp_id") 
-            and device.status_range[code].dp_id != 0
+            and device.status_range[code].dp_id is not None
             ):
             return device.status_range[code].dp_id
         for dpId in device.local_strategy:
@@ -188,7 +229,7 @@ class MultiManager:  # noqa: F811
             return dp_id_item["status_code"]
         return None
     
-    def __get_devices_from_device_id(self, device_id: str) -> list[XTDevice]:
+    def __get_devices_from_device_id(self, device_id: str) -> list[XTDevice] | None:
         return_list = []
         device_maps = self.__get_available_device_maps()
         for device_map in device_maps:
@@ -242,7 +283,7 @@ class MultiManager:  # noqa: F811
             return None, None, None, False
         return code, dpId, value, True
 
-    def convert_device_report_status_list(self, device_id: str, status_in: list) -> list[dict[str, Any]]:
+    def convert_device_report_status_list(self, device_id: str, status_in: list) -> list:
         status = copy.deepcopy(status_in)
         for item in status:
             code, dpId, value, result_ok = self._read_code_dpid_value_from_state(device_id, item)
@@ -255,7 +296,7 @@ class MultiManager:  # noqa: F811
                 pass
         return status
 
-    def on_message(self, source: str, msg: dict):
+    def on_message(self, source: str, msg: str):
         if not self.is_ready_for_messages:
             self.pending_messages.append((source, msg))
             return
@@ -275,7 +316,7 @@ class MultiManager:  # noqa: F811
         if source in self.accounts:
             self.accounts[source].on_message(new_message)
 
-    def _get_device_id_from_message(self, msg: dict) -> str | None:
+    def _get_device_id_from_message(self, msg: str) -> str | None:
         protocol = msg.get("protocol", 0)
         data = msg.get("data", {})
         if (dev_id := data.get("devId", None)):
@@ -286,14 +327,14 @@ class MultiManager:  # noqa: F811
                     return dev_id
         return None
     
-    def _get_status_list_from_message(self, msg: dict) -> str | None:
+    def _get_status_list_from_message(self, msg: str) -> str | None:
         protocol = msg.get("protocol", 0)
         data = msg.get("data", {})
         if protocol == PROTOCOL_DEVICE_REPORT and "status" in data:
             return data["status"]
         return None
 
-    def _convert_message_for_all_accounts(self, msg: dict) -> dict:
+    def _convert_message_for_all_accounts(self, msg: str) -> str:
         protocol = msg.get("protocol", 0)
         data = msg.get("data", {})
         if protocol == PROTOCOL_DEVICE_REPORT:
@@ -352,10 +393,10 @@ class MultiManager:  # noqa: F811
                 return stream_allocate
 
     def send_lock_unlock_command(
-            self, device: XTDevice, lock: bool
+            self, device_id: str, lock: bool
     ) -> bool:
         for account in self.accounts.values():
-            if account.send_lock_unlock_command(device, lock):
+            if account.send_lock_unlock_command(device_id, lock):
                 return True
         return False
     
@@ -372,8 +413,8 @@ class MultiManager:  # noqa: F811
         if device := self.device_map.get(device_id, None):
             old_online_status = device.online
             for online_status in device.online_states:
-                device.online = device.online_states[online_status]
-                if device.online: #Prefer to be more On than Off if multiple state are not in accordance
+                device.online = online_status
+                if online_status: #Prefer to be more On than Off if multiple state are not in accordance
                     break
             if device.online != old_online_status:
                 self.multi_device_listener.update_device(device, None)
@@ -385,84 +426,7 @@ class MultiManager:  # noqa: F811
                 return_list.append(account.get_type_name())
         return return_list
     
-    def execute_device_entity_function(self, function: XTDeviceEntityFunctions, device: XTDevice, param1: Any | None = None, param2: Any | None = None):
+    def execute_device_entity_function(self, function: XTDeviceEntityFunctions, device: XTDevice, param1: any | None = None):
         match function:
             case XTDeviceEntityFunctions.RECALCULATE_PERCENT_SCALE:
-                if isinstance(param1, str) and isinstance(param2, int):
-                    CloudFixes.fix_incorrect_percent_scale_forced(device, param1, param2)
-    
-    async def on_loading_finalized(self, hass: HomeAssistant, config_entry: XTConfigEntry):
-        for account in self.accounts.values():
-            await account.on_loading_finalized(hass, config_entry, self)
-        for callback in self.post_setup_callbacks:
-            callback()
-
-    def set_general_property(self, property_id: XTMultiManagerProperties, property_value: Any):
-        self.general_properties[property_id] = property_value
-    
-    def get_general_property(self, property_id: XTMultiManagerProperties, default: Any | None = None) -> Any | None:
-        return self.general_properties.get(property_id, default)
-
-
-
-
-
-
-
-
-
-
-
-from .shared.shared_classes import (
-    DeviceWatcher,
-    XTConfigEntry,  # noqa: F811
-    XTDeviceMap,
-    XTDevice,
-)
-from .shared.threading import (
-    XTThreadingManager,
-)
-
-from .shared.debug.debug_helper import (
-    DebugHelper,
-)
-
-from .shared.merging_manager import (
-    XTMergingManager,
-)
-
-from .shared.cloud_fix import (
-    CloudFixes,
-)
-
-from .shared.multi_source_handler import (
-    MultiSourceHandler,
-)
-
-from .shared.multi_mq import (
-    MultiMQTTQueue,
-)
-
-from .shared.multi_device_listener import (
-    MultiDeviceListener,
-)
-
-from .shared.multi_virtual_state_handler import (
-    XTVirtualStateHandler,
-)
-
-from .shared.multi_virtual_function_handler import (
-    XTVirtualFunctionHandler,
-)
-
-from ..util import (
-    append_lists,
-)
-
-from .shared.interface.device_manager import (
-    XTDeviceManagerInterface,
-)
-
-from ..entity_parser.entity_parser import (
-    XTCustomEntityParser,
-)
+                CloudFixes.fix_incorrect_percent_scale_forced(device, param1)

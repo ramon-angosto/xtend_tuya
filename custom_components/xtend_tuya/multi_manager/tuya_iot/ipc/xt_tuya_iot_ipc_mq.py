@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Optional, Any
 import uuid
 import json
-import time
 from paho.mqtt import (
     client as mqtt,
 )
@@ -15,13 +14,13 @@ from tuya_iot.openmq import (
     TO_C_SMART_HOME_MQTT_CONFIG_API,
 )
 
+from tuya_iot import (
+    TuyaOpenAPI,
+)
+
 from ..xt_tuya_iot_mq import (
     XTIOTOpenMQ,
     XTIOTTuyaMQConfig,
-    TuyaMQConfig,
-)
-from ..xt_tuya_iot_openapi import (
-    XTIOTOpenAPI,
 )
 
 from ....const import (
@@ -31,36 +30,43 @@ from ....const import (
 
 
 class XTIOTOpenMQIPC(XTIOTOpenMQ):
-    def __init__(self, api: XTIOTOpenAPI) -> None:
-        self.sleep_time: float | None = None   #Debug value to have a time between IPC and IOT queries for log reading
-        self.mq_config: XTIOTTuyaMQConfig | None = None
-        self.link_id: str | None = f"tuya.ipc.{uuid.uuid1()}"
-        self.class_id: str | None = "IPC"
-        self.topics: str | None = "ipc"
+    def __init__(self, api: TuyaOpenAPI) -> None:
+        self.mq_config: XTIOTTuyaMQConfig = None
         super().__init__(api)
+    
+    def _get_mqtt_config(self) -> Optional[XTIOTTuyaMQConfig]:
+        if not self.api.is_connect():
+            return None
+        response = self.api.post(
+            TO_C_CUSTOM_MQTT_CONFIG_API
+            if (self.api.auth_type == AuthType.CUSTOM)
+            else TO_C_SMART_HOME_MQTT_CONFIG_API,
+            {
+                "uid": self.api.token_info.uid,
+                "link_id": f"tuya.ipc.{uuid.uuid1()}",
+                "link_type": "mqtt",
+                "topics": "ipc",
+                "msg_encrypted_version": "2.0"
+                if (self.api.auth_type == AuthType.CUSTOM)
+                else "1.0",
+            },
+        )
+
+        if response.get("success", False) is False:
+            LOGGER.warning(f"_get_mqtt_config failed: {response}", stack_info=True)
+            return None
+
+        return XTIOTTuyaMQConfig(response)
+    
+    # def _on_connect(self, mqttc: mqtt.Client, user_data: Any, flags, rc: mqtt_ReasonCode, properties: mqtt_Properties | None = None):
+    #     if rc == 0:
+    #         for (key, value) in self.mq_config.source_topic.items():
+    #             mqttc.subscribe(value)
+    #     elif rc == 5:
+    #         self.__run_mqtt()
 
     def _on_message(self, mqttc: mqtt.Client, user_data: Any, msg: mqtt.MQTTMessage):
         msg_dict = json.loads(msg.payload.decode("utf8"))
+        #LOGGER.warning(f"IPC Message: {msg_dict}")
         for listener in self.message_listeners:
             listener(msg_dict)
-    
-    def _start(self, mq_config: TuyaMQConfig) -> mqtt.Client:
-        #mqttc = mqtt.Client(callback_api_version=mqtt_CallbackAPIVersion.VERSION2 ,client_id=mq_config.client_id)
-        mqttc = mqtt.Client(client_id=mq_config.client_id)
-        mqttc.username_pw_set(mq_config.username, mq_config.password)
-        mqttc.user_data_set({"mqConfig": mq_config})
-        mqttc.on_connect = self._on_connect
-        mqttc.on_message = self._on_message
-        mqttc.on_subscribe = self._on_subscribe
-        mqttc.on_log = self._on_log
-        #mqttc.on_publish = self._on_publish
-        mqttc.on_disconnect = self._on_disconnect
-
-        url = urlsplit(mq_config.url)
-        if url.scheme == "ssl":
-            mqttc.tls_set()
-
-        mqttc.connect(url.hostname, url.port)
-
-        mqttc.loop_start()
-        return mqttc

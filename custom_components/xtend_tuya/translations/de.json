@@ -5,7 +5,8 @@
         },
         "error": {
             "invalid_auth": "Ung\u00fcltige Authentifizierung",
-            "login_error": "Anmeldefehler ({code}): {msg}"
+            "login_error": "Anmeldefehler ({code}): {msg}",
+            "reauth_successful": "Die erneute Authentifizierung war erfolgreich"
         },
         "step": {
             "reauth_user_code": {
@@ -15,11 +16,16 @@
                 "description": "Die Tuya-Integration verwendet jetzt eine verbesserte Anmeldemethode. Um sich erneut bei deinem Smart Life- oder Tuya Smart-Konto zu authentifizieren, musst du deinen Benutzercode eingeben. \n\nDu findest diesen Code in der Smart Life-App oder Tuya Smart-App im Bildschirm **Einstellungen** \u2192 **Konto und Sicherheit** und gib den im Feld **Benutzercode** angezeigten Code ein. Beim Benutzercode muss die Gro\u00df-/Kleinschreibung beachtet werden. Bitte gib ihn genau so ein, wie in der App angezeigt."
             },
             "scan": {
-                "description": "Verwende die Smart Life-App oder Tuya Smart-App, um den folgenden QR-Code zu scannen, um die Anmeldung abzuschlie\u00dfen.\n\nFahre mit dem n\u00e4chsten Schritt fort, sobald du diesen Schritt in der App abgeschlossen hast."
+                "description": "Verwende die Smart Life-App oder die Tuya Smart-App, um den folgenden QR-Code zu scannen, um die Anmeldung abzuschlie\u00dfen.\n\nFahre mit dem n\u00e4chsten Schritt fort, sobald du diesen Schritt in der App abgeschlossen hast."
             },
             "user": {
                 "data": {
-                    "user_code": "Benutzercode"
+                    "access_id": "Tuya IoT-Zugriffs-ID",
+                    "access_secret": "Tuya IoT-Zugriffsgeheimnis",
+                    "country_code": "Land",
+                    "password": "Passwort",
+                    "user_code": "Benutzercode",
+                    "username": "Konto"
                 },
                 "description": "Gib deinen Smart Life- oder Tuya Smart-Benutzercode ein. \n\nDu findest diesen Code in der Smart Life-App oder Tuya Smart-App im Bildschirm **Einstellungen** \u2192 **Konto und Sicherheit** und gib den im Feld **Benutzercode** angezeigten Code ein. Beim Benutzercode muss die Gro\u00df-/Kleinschreibung beachtet werden. Bitte gib ihn genau so ein, wie in der App angezeigt."
             }
@@ -55,7 +61,7 @@
                 "name": "Kippen"
             },
             "voc": {
-                "name": "VOC"
+                "name": "VOCs"
             }
         },
         "button": {
@@ -101,41 +107,24 @@
                 "name": "T\u00fcr 3"
             }
         },
-        "event": {
-            "numbered_button": {
-                "name": "Taste {button_number}",
-                "state_attributes": {
-                    "event_type": {
-                        "state": {
-                            "click": "Geklickt",
-                            "double_click": "Doppelklick",
-                            "press": "Lange gedr\u00fcckt"
-                        }
-                    }
-                }
-            }
-        },
         "light": {
             "backlight": {
                 "name": "Hintergrundbeleuchtung"
             },
             "light": {
-                "name": "Leuchte"
+                "name": "Licht"
             },
             "light_2": {
-                "name": "Leuchte 2"
+                "name": "Licht 2"
             },
             "light_3": {
-                "name": "Leuchte 3"
+                "name": "Licht 3"
             },
             "night_light": {
                 "name": "Nachtlicht"
             }
         },
         "number": {
-            "alarm_duration": {
-                "name": "Alarmdauer"
-            },
             "cloud_recipe": {
                 "name": "Cloud-Rezept"
             },
@@ -190,9 +179,6 @@
             "sensitivity": {
                 "name": "Empfindlichkeit"
             },
-            "target_dis_closest": {
-                "name": "Entfernung zum n\u00e4chstgelegenen Ziel"
-            },
             "temperature": {
                 "name": "Temperatur"
             },
@@ -226,21 +212,7 @@
                 "state": {
                     "0": "Automatisch",
                     "1": "Aus",
-                    "2": "Ein"
-                }
-            },
-            "blanket_level": {
-                "state": {
-                    "level_1": "Niedrig",
-                    "level_10": "Hoch",
-                    "level_2": "Stufe 2",
-                    "level_3": "Stufe 3",
-                    "level_4": "Stufe 4",
-                    "level_5": "Stufe 5",
-                    "level_6": "Stufe 6",
-                    "level_7": "Stufe 7",
-                    "level_8": "Stufe 8",
-                    "level_9": "Stufe 9"
+                    "2": "An"
                 }
             },
             "brightness": {
@@ -281,8 +253,15 @@
             "decibel_sensitivity": {
                 "name": "Empfindlichkeit der Ger\u00e4uscherkennung",
                 "state": {
-                    "0": "Niedrige Empfindlichkeit",
+                    "0": "Geringe Empfindlichkeit",
                     "1": "Hohe Empfindlichkeit"
+                }
+            },
+            "fan_angle": {
+                "state": {
+                    "30": "30\u00b0",
+                    "60": "60\u00b0",
+                    "90": "90\u00b0"
                 }
             },
             "fingerbot_mode": {
@@ -293,7 +272,7 @@
                 }
             },
             "horizontal_fan_angle": {
-                "name": "Horizontaler Leitblechwinkel",
+                "name": "Horizontaler Schwenkklappenwinkel",
                 "state": {
                     "30": "30\u00b0",
                     "60": "60\u00b0",
@@ -328,7 +307,7 @@
             "humidifier_spray_mode": {
                 "name": "Spr\u00fchmodus",
                 "state": {
-                    "auto": "Auto",
+                    "auto": "Automatisch",
                     "health": "Gesundheit",
                     "humidity": "Luftfeuchtigkeit",
                     "sleep": "Schlafen",
@@ -336,14 +315,14 @@
                 }
             },
             "ipc_work_mode": {
-                "name": "IP-Kamera-Modus",
+                "name": "IPC-Modus",
                 "state": {
                     "0": "Energiesparmodus",
-                    "1": "Dauerbetriebsmodus"
+                    "1": "Kontinuierlicher Arbeitsmodus"
                 }
             },
             "led_type": {
-                "name": "Typ Lichtquelle",
+                "name": "Licht Quellentyp",
                 "state": {
                     "halogen": "Halogen",
                     "incandescent": "Gl\u00fchlampe",
@@ -351,7 +330,7 @@
                 }
             },
             "led_type_2": {
-                "name": "Typ Lichtquelle 2",
+                "name": "Licht 2 Quellentyp",
                 "state": {
                     "halogen": "Halogen",
                     "incandescent": "Gl\u00fchlampe",
@@ -359,7 +338,7 @@
                 }
             },
             "led_type_3": {
-                "name": "Typ Lichtquelle 3",
+                "name": "Licht 3 Quellentyp",
                 "state": {
                     "halogen": "Halogen",
                     "incandescent": "Gl\u00fchlampe",
@@ -367,11 +346,11 @@
                 }
             },
             "light_mode": {
-                "name": "Modus der Kontrollleuchte",
+                "name": "Anzeigelichtmodus",
                 "state": {
-                    "none": "Aus",
+                    "none": "An",
                     "pos": "Invertierten Schalterzustand anzeigen",
-                    "relay": "Ein/Aus-Zustand des Schalters anzeigen"
+                    "relay": "Ein-/Ausschaltzustand anzeigen"
                 }
             },
             "material": {
@@ -383,9 +362,9 @@
             "motion_sensitivity": {
                 "name": "Empfindlichkeit der Bewegungserkennung",
                 "state": {
-                    "0": "Niedrig",
-                    "1": "Mittel",
-                    "2": "Hoch"
+                    "0": "Geringe Empfindlichkeit",
+                    "1": "Mittlere Empfindlichkeit",
+                    "2": "Hohe Empfindlichkeit"
                 }
             },
             "record_mode": {
@@ -400,14 +379,14 @@
                 "state": {
                     "last": "Letzten Zustand merken",
                     "memory": "Letzten Zustand merken",
-                    "off": "Aus",
-                    "on": "Ein",
-                    "power_off": "Aus",
-                    "power_on": "Ein"
+                    "off": "An",
+                    "on": "An",
+                    "power_off": "An",
+                    "power_on": "An"
                 }
             },
             "target_humidity": {
-                "name": "Sollwert der Luftfeuchtigkeit"
+                "name": "Zielfeuchtigkeit"
             },
             "temperature_level": {
                 "name": "Temperaturniveau"
@@ -438,7 +417,7 @@
                     "left_spiral": "Spirale links",
                     "mop": "Mopp",
                     "part": "Teil",
-                    "partial_bow": "Bogen teilweise",
+                    "partial_bow": "Bogen Teilweise",
                     "pick_zone": "Zone ausw\u00e4hlen",
                     "point": "Punkt",
                     "pose": "Pose",
@@ -454,7 +433,7 @@
                 }
             },
             "vertical_fan_angle": {
-                "name": "Vertikaler Leitblechwinkel",
+                "name": "Vertikaler Schwenkklappenwinkel",
                 "state": {
                     "30": "30\u00b0",
                     "60": "60\u00b0",
@@ -488,17 +467,6 @@
                     "severe": "Stark"
                 }
             },
-            "air_quality_index": {
-                "name": "Luftqualit\u00e4tsindex",
-                "state": {
-                    "level_1": "Stufe 1",
-                    "level_2": "Stufe 2",
-                    "level_3": "Stufe 3",
-                    "level_4": "Stufe 4",
-                    "level_5": "Stufe 5",
-                    "level_6": "Stufe 6"
-                }
-            },
             "battery": {
                 "name": "Batterie"
             },
@@ -524,13 +492,10 @@
                 "name": "Stromst\u00e4rke"
             },
             "current_temperature": {
-                "name": "Ist-Temperatur"
+                "name": "Aktuelle Temperatur"
             },
             "duster_cloth_life": {
-                "name": "Lebensdauer des Staubtuchs"
-            },
-            "filter_duration": {
-                "name": "Filter-Nutzungsdauer"
+                "name": "Staubtuch Lebensdauer"
             },
             "filter_life": {
                 "name": "Lebensdauer des Filters"
@@ -563,31 +528,31 @@
                 "name": "Methan"
             },
             "phase_a_current": {
-                "name": "Stromst\u00e4rke L1"
+                "name": "Strom der Phase A"
             },
             "phase_a_power": {
-                "name": "Leistung L1"
+                "name": "Phase A Leistung"
             },
             "phase_a_voltage": {
-                "name": "Spannung L1"
+                "name": "Phase A Spannung"
             },
             "phase_b_current": {
-                "name": "Stromst\u00e4rke L2"
+                "name": "Phase B Strom"
             },
             "phase_b_power": {
-                "name": "Leistung L2"
+                "name": "Phase B Leistung"
             },
             "phase_b_voltage": {
-                "name": "Spannung L2"
+                "name": "Phase B Spannung"
             },
             "phase_c_current": {
-                "name": "Stromst\u00e4rke L3"
+                "name": "Phase C Strom"
             },
             "phase_c_power": {
-                "name": "Leistung L3"
+                "name": "Phase C Leistung"
             },
             "phase_c_voltage": {
-                "name": "Spannung L3"
+                "name": "Phase C Spannung"
             },
             "pm1": {
                 "name": "PM1"
@@ -596,13 +561,10 @@
                 "name": "PM10"
             },
             "pm25": {
-                "name": "PM2,5"
+                "name": "PM2.5"
             },
             "power": {
                 "name": "Leistung"
-            },
-            "pump_time": {
-                "name": "Nutzungsdauer der Wasserpumpe"
             },
             "remaining_time": {
                 "name": "Verbleibende Zeit"
@@ -631,13 +593,21 @@
                 }
             },
             "status": {
-                "name": "Status"
+                "name": "Status",
+                "state": {
+                    "boiling_temp": "Siedetemperatur",
+                    "cooling": "K\u00fchlen",
+                    "heating": "Heizen",
+                    "heating_temp": "Heiztemperatur",
+                    "reserve_1": "Reserve 1",
+                    "reserve_2": "Reserve 2",
+                    "reserve_3": "Reserve 3",
+                    "standby": "Standby",
+                    "warm": "W\u00e4rmeerhalt"
+                }
             },
             "temperature": {
                 "name": "Temperatur"
-            },
-            "temperature_external": {
-                "name": "F\u00fchler-Temperatur"
             },
             "total_absorption_particles": {
                 "name": "Gesamtabsorption von Partikeln"
@@ -666,20 +636,14 @@
             "total_watering_time": {
                 "name": "Bew\u00e4sserungszeit insgesamt"
             },
-            "uv_runtime": {
-                "name": "UV-Nutzungsdauer"
-            },
             "voc": {
-                "name": "VOC"
+                "name": "VOCs"
             },
             "voltage": {
                 "name": "Spannung"
             },
             "water_level": {
                 "name": "Wasserstand"
-            },
-            "water_time": {
-                "name": "Wassernutzungsdauer"
             }
         },
         "switch": {
@@ -753,7 +717,7 @@
                 "name": "Nat\u00fcrlicher Wind"
             },
             "open_window_detection": {
-                "name": "Erkennung ge\u00f6ffneter Fenster"
+                "name": "Erkennung offener Fenster"
             },
             "oxygen_bar": {
                 "name": "Sauerstoffbar"
@@ -783,7 +747,7 @@
                 "name": "Schlafen"
             },
             "sleep_aid": {
-                "name": "Einschlafhilfe"
+                "name": "Schlafmittel"
             },
             "slow_feed": {
                 "name": "Langsamer Vorschub"
@@ -890,6 +854,32 @@
             "wide_dynamic_range": {
                 "name": "Gro\u00dfer Dynamikbereich"
             }
+        }
+    },
+    "issues": {
+        "service_deprecation_turn_off": {
+            "description": "Die Tuya-Staubsaugerunterst\u00fctzung f\u00fcr den Dienst vacuum.turn_off ist veraltet und wird in Home Assistant 2024.2 entfernt. Bitte passe alle Automatisierungen oder Skripte, die diesen Dienst verwenden, so an, dass sie stattdessen vacuum.stop aufrufen.",
+            "fix_flow": {
+                "step": {
+                    "confirm": {
+                        "description": "Die Tuya-Staubsaugerunterst\u00fctzung f\u00fcr den Dienst vacuum.turn_off ist veraltet und wird in Home Assistant 2024.2 entfernt. Bitte passe alle Automatisierungen oder Skripte, die diesen Dienst verwenden, so an, dass sie stattdessen vacuum.stop aufrufen.",
+                        "title": "Die Tuya-Staubsaugerunterst\u00fctzung f\u00fcr \u201evacuum.turn_off\u201c wird entfernt"
+                    }
+                }
+            },
+            "title": "Die Tuya-Staubsaugerunterst\u00fctzung f\u00fcr \u201evacuum.turn_off\u201c wird entfernt"
+        },
+        "service_deprecation_turn_on": {
+            "description": "Die Tuya-Staubsaugerunterst\u00fctzung f\u00fcr den Dienst vacuum.turn_on ist veraltet und wird in Home Assistant 2024.2 entfernt. Bitte passe alle Automatisierungen oder Skripte, die den Dienst verwenden, so an, dass sie stattdessen vacuum.start aufrufen, und klicke unten auf Senden, um dieses Problem als gel\u00f6st zu markieren.",
+            "fix_flow": {
+                "step": {
+                    "confirm": {
+                        "description": "Die Tuya-Staubsaugerunterst\u00fctzung f\u00fcr den Dienst vacuum.turn_on ist veraltet und wird in Home Assistant 2024.2 entfernt. Bitte passe alle Automatisierungen oder Skripte, die den Dienst verwenden, so an, dass sie stattdessen vacuum.start aufrufen, und klicke unten auf Senden, um dieses Problem als gel\u00f6st zu markieren.",
+                        "title": "Die Tuya-Staubsaugerunterst\u00fctzung f\u00fcr \u201evacuum.turn_on\u201c wird entfernt"
+                    }
+                }
+            },
+            "title": "Die Tuya-Staubsaugerunterst\u00fctzung f\u00fcr \u201evacuum.turn_on\u201c wird entfernt"
         }
     }
 }

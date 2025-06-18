@@ -20,7 +20,7 @@ from .multi_manager.multi_manager import (
     MultiManager,
     XTDevice,
 )
-from .const import TUYA_DISCOVERY_NEW, XTDPCode, LOGGER, CROSS_CATEGORY_DEVICE_DESCRIPTOR
+from .const import TUYA_DISCOVERY_NEW, XTDPCode, LOGGER
 from .ha_tuya_integration.tuya_integration_imports import (
     TuyaBinarySensorEntity,
     TuyaBinarySensorEntityDescription,
@@ -36,14 +36,8 @@ class XTBinarySensorEntityDescription(TuyaBinarySensorEntityDescription):
     # This DPCode represent the online status of a device
     device_online: bool = False
 
-    def get_entity_instance(self, 
-                            device: XTDevice, 
-                            device_manager: MultiManager, 
-                            description: XTBinarySensorEntityDescription
-                            ) -> XTBinarySensorEntity:
-        return XTBinarySensorEntity(device=device, 
-                              device_manager=device_manager, 
-                              description=description)
+    """ def __init__(self, *args, **kwargs):
+        super(XTBinarySensorEntityDescription, self).__init__(*args, **kwargs) """
 
 
 # Commonly used sensors
@@ -54,25 +48,6 @@ TAMPER_BINARY_SENSOR = XTBinarySensorEntityDescription(
     entity_category=EntityCategory.DIAGNOSTIC,
 )
 
-PROXIMITY_BINARY_SENSOR: tuple[XTBinarySensorEntityDescription, ...] = (
-    XTBinarySensorEntityDescription(
-        key=XTDPCode.PRESENCE_STATE,
-        translation_key="pir_state",
-        device_class=BinarySensorDeviceClass.MOTION,
-        on_value="presence",
-    ),
-    XTBinarySensorEntityDescription(
-        key=XTDPCode.PIR_STATE,
-        translation_key="pir_state",
-        device_class=BinarySensorDeviceClass.MOTION,
-        on_value="pir",
-    ),
-    XTBinarySensorEntityDescription(
-        key=XTDPCode.PIR2,
-        translation_key="pir_state",
-        device_class=BinarySensorDeviceClass.MOTION,
-    ),
-)
 
 # All descriptions can be found here. Mostly the Boolean data types in the
 # default status set of each category (that don't have a set instruction)
@@ -88,30 +63,33 @@ BINARY_SENSORS: dict[str, tuple[XTBinarySensorEntityDescription, ...]] = {
         ),
     ),
     "kg": (
-        *PROXIMITY_BINARY_SENSOR,
+        XTBinarySensorEntityDescription(
+            key=XTDPCode.PRESENCE_STATE,
+            device_class=BinarySensorDeviceClass.MOTION,
+            on_value="presence",
+        ),
     ),
     "msp": (
         #If 1 is reported, it will be counted once. 
         #If 0 is reported, it will not be counted
         #(today and the average number of toilet visits will be counted on the APP)
         XTBinarySensorEntityDescription(
-            key=XTDPCode.CLEANING_NUM,
-            translation_key="cleaning_num",
+            key = XTDPCode.TRASH_STATUS,
+            name = "Cubo lleno",
+            entity_category = EntityCategory.DIAGNOSTIC,
+            on_value=1,                                    # 1 = lleno
         ),
         XTBinarySensorEntityDescription(
-            key=XTDPCode.TRASH_STATUS,
-            translation_key="trash_status",
-            entity_registry_enabled_default=True,
-            on_value="1",
-        ),
-        XTBinarySensorEntityDescription(
-            key=XTDPCode.POWER,
-            translation_key="power",
-            entity_registry_enabled_default=False,
+            key = XTDPCode.MONITORING,
+            name = "Gato dentro",
+            on_value=1,                                    # 1 = lleno
         ),
     ),
     "pir": (
-        *PROXIMITY_BINARY_SENSOR,
+        XTBinarySensorEntityDescription(
+            key=XTDPCode.PIR2,
+            device_class=BinarySensorDeviceClass.MOTION,
+        ),
     ),
     #"qccdz": (
     #    XTBinarySensorEntityDescription(
@@ -139,47 +117,34 @@ BINARY_SENSORS: dict[str, tuple[XTBinarySensorEntityDescription, ...]] = {
     ),
 }
 
-BINARY_SENSORS["tdq"] = BINARY_SENSORS["kg"]
-
 #Lock duplicates
 BINARY_SENSORS["videolock"] = BINARY_SENSORS["jtmspro"]
-BINARY_SENSORS["jtmsbh"] = BINARY_SENSORS["jtmspro"]
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: XTConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up Tuya binary sensor dynamically through Tuya discovery."""
     hass_data = entry.runtime_data
-    if hass_data.manager is None:
-        return
-    if entry.runtime_data.multi_manager is None:
-        return
+
     merged_descriptors = BINARY_SENSORS
     for new_descriptor in entry.runtime_data.multi_manager.get_platform_descriptors_to_merge(Platform.BINARY_SENSOR):
         merged_descriptors = merge_device_descriptors(merged_descriptors, new_descriptor)
 
     @callback
-    def async_discover_device(device_map, restrict_dpcode: str | None = None) -> None:
+    def async_discover_device(device_map) -> None:
         """Discover and add a discovered Tuya binary sensor."""
         entities: list[XTBinarySensorEntity] = []
         device_ids = [*device_map]
-        if hass_data.manager is None:
-            return
         for device_id in device_ids:
             if device := hass_data.manager.device_map.get(device_id, None):
                 if descriptions := merged_descriptors.get(device.category):
                     for description in descriptions:
                         dpcode = description.dpcode or description.key
-                        if dpcode in device.status and (restrict_dpcode is None or restrict_dpcode == description.key):
+                        if dpcode in device.status:
                             entities.append(
-                                XTBinarySensorEntity.get_entity_instance(description, device, hass_data.manager)
-                            )
-                if descriptions := merged_descriptors.get(CROSS_CATEGORY_DEVICE_DESCRIPTOR):
-                    for description in descriptions:
-                        dpcode = description.dpcode or description.key
-                        if dpcode in device.status and (restrict_dpcode is None or restrict_dpcode == description.key):
-                            entities.append(
-                                XTBinarySensorEntity.get_entity_instance(description, device, hass_data.manager)
+                                XTBinarySensorEntity(
+                                    device, hass_data.manager, XTBinarySensorEntityDescription(**description.__dict__)
+                                )
                             )
 
         async_add_entities(entities)
@@ -196,7 +161,7 @@ async def async_setup_entry(
 class XTBinarySensorEntity(XTEntity, TuyaBinarySensorEntity):
     """XT Binary Sensor Entity."""
 
-    _entity_description: XTBinarySensorEntityDescription
+    entity_description: XTBinarySensorEntityDescription
 
     def __init__(
         self,
@@ -206,15 +171,14 @@ class XTBinarySensorEntity(XTEntity, TuyaBinarySensorEntity):
     ) -> None:
         """Init Tuya binary sensor."""
         super(XTBinarySensorEntity, self).__init__(device, device_manager, description)
-        super(XTEntity, self).__init__(device, device_manager, description) # type: ignore
         self.device = device
         self.device_manager = device_manager
-        self._entity_description = description
+        self.entity_description = description
 
     @property
     def is_on(self) -> bool:
         is_on = super().is_on
-        if self._entity_description.device_online:
+        if self.entity_description.device_online:
             dpcode = self.entity_description.dpcode or self.entity_description.key
             self.device.online_states[dpcode] = is_on
             self.device_manager.update_device_online_status(self.device.id)
@@ -224,9 +188,3 @@ class XTBinarySensorEntity(XTEntity, TuyaBinarySensorEntity):
         """Call when entity about to be added to hass."""
         await super().async_added_to_hass()
         self.is_on #Update the online status if needed
-    
-    @staticmethod
-    def get_entity_instance(description: XTBinarySensorEntityDescription, device: XTDevice, device_manager: MultiManager) -> XTBinarySensorEntity:
-        if hasattr(description, "get_entity_instance") and callable(getattr(description, "get_entity_instance")):
-            return description.get_entity_instance(device, device_manager, description)
-        return XTBinarySensorEntity(device, device_manager, XTBinarySensorEntityDescription(**description.__dict__))
