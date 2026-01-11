@@ -1026,6 +1026,24 @@ SENSORS: dict[str, tuple[XTSensorEntityDescription, ...]] = {
             translation_key="hps_presence_state",
         ),
         XTSensorEntityDescription(
+            key=XTDPCode.DISTANCE,
+            name="Target distance",
+            translation_key="distance",
+            device_class=SensorDeviceClass.DISTANCE,
+            entity_category=SensorStateClass.MEASUREMENT,
+        ),
+        XTSensorEntityDescription(
+            key=XTDPCode.MOV_STATUS,
+            translation_key="mov_status",
+        ),
+        XTSensorEntityDescription(
+            key=XTDPCode.DETECTION_NEAR,
+            name="Detection near",
+            translation_key="detection_near",
+            device_class=SensorDeviceClass.DISTANCE,
+            entity_category=SensorStateClass.MEASUREMENT,
+        ),
+        XTSensorEntityDescription(
             key=XTDPCode.TARGET_DISTANCE,
             translation_key="target_distance",
             state_class=SensorStateClass.MEASUREMENT,
@@ -1756,6 +1774,20 @@ async def async_setup_entry(
     )
 
 
+# This device is bluetooth and without a hub, always reposts as offline
+FORCE_ALWAYS_ONLINE_BY_DEVICE_ID: set[str] = {
+    "bfa469yud5ajx1w8",  # SGS01
+}
+
+FORCE_ALWAYS_ONLINE_BY_PID: set[str] = {
+    "gvygg3m8",          # SGS01 product ID
+}
+
+FORCE_ALWAYS_ONLINE_BY_CATEGORY: set[str] = {
+    "zwjcy",             # SGS01 category
+}
+
+
 class XTSensorEntity(XTEntity, TuyaSensorEntity, RestoreSensor):  # type: ignore
     """XT Sensor Entity."""
 
@@ -1785,6 +1817,20 @@ class XTSensorEntity(XTEntity, TuyaSensorEntity, RestoreSensor):  # type: ignore
         self.entity_description = description  # type: ignore
         if self.device.category == "dlq":
             LOGGER.warning(f"Added DLQ device: {self.device.name}")
+
+    # ──────────────────────────────────────────────────────────────
+    # Availability override: honour the force‑online lists
+    # ──────────────────────────────────────────────────────────────
+    @property
+    def available(self) -> bool:  # type: ignore[override]
+        """Return True for whitelisted devices, else use Tuya 'online'."""
+        if (
+            self.device.id in FORCE_ALWAYS_ONLINE_BY_DEVICE_ID
+            or self.device.product_id in FORCE_ALWAYS_ONLINE_BY_PID
+            or self.device.category in FORCE_ALWAYS_ONLINE_BY_CATEGORY
+        ):
+            return True
+        return self.device.online
 
     def reset_value(self, _: datetime | None, manual_call: bool = False) -> None:
         if manual_call and self.cancel_reset_after_x_seconds is not None:

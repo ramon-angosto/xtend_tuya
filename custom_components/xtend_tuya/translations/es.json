@@ -68,6 +68,18 @@
             },
             "wet": {
                 "name": "H\u00famedo"
+            },
+            "barrel_infrared": {
+                "name": "Sensor infrarrojo de barril"
+            },
+            "security_status": {
+                "name": "Estado de seguridad"
+            },
+            "gravity_induction": {
+                "name": "Inducci\u00f3n de gravedad"
+            },
+            "enter_infrared": {
+                "name": "Sensor infrarrojo de entrada"
             }
         },
         "button": {
@@ -552,6 +564,12 @@
             }
         },
         "sensor": {
+            "activepowerc": {
+                "name": "Potencia activa C"
+            },
+            "acv": {
+                "name": "Tensión de red"
+            },
             "air_pressure": {
                 "name": "Presi\u00f3n del aire"
             },
@@ -614,8 +632,14 @@
             "depth": {
                 "name": "Profundidad"
             },
+            "detection_near": {
+                "name": "Detección cercana"
+            },
             "dew_point_temperature": {
                 "name": "Punto de roc\u00edo"
+            },
+            "distance": {
+                "name": "Distancia objetivo"
             },
             "duster_cloth_life": {
                 "name": "Vida \u00fatil de la gamuza"
@@ -640,6 +664,16 @@
             },
             "heat_index_temperature": {
                 "name": "\u00cdndice de calor"
+            },
+            "hps_presence_state": {
+                "name": "Presencia",
+                "state": {
+                    "none": "ninguna",
+                    "presence": "Presencia",
+                    "peaceful": "Tranquilo",
+                    "small_move": "Movimiento peque\u00f1o",
+                    "large_move": "Movimiento grande"
+                }
             },
             "humidity": {
                 "name": "Humedad"
@@ -792,6 +826,18 @@
             "supply_frequency": {
                 "name": "Frecuencia de suministro"
             },
+            "mov_status": {
+                "name": "Movimiento",
+                "state": {
+                    "nobody": "Despejado",
+                    "movement": "Movimiento",
+                    "move": "Movimiento",
+                    "none": "Despejado"
+                }
+            },
+            "weight": {
+                "name": "Peso"
+            },
             "temperature": {
                 "name": "Temperatura"
             },
@@ -876,6 +922,9 @@
             },
             "battery_lock": {
                 "name": "Bloqueo de la bater\u00eda"
+            },
+            "breath_switch": {
+                "name": "Deteccion de respiraci\u00f3n"
             },
             "child_lock": {
                 "name": "Bloqueo infantil"

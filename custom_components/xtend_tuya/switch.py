@@ -175,6 +175,10 @@ SWITCHES: dict[str, tuple[XTSwitchEntityDescription, ...]] = {
             translation_key="indicator_light",
             entity_category=EntityCategory.CONFIG,
         ),
+        XTSwitchEntityDescription(
+            key=XTDPCode.BREATH_SWITCH,
+            translation_key="breath_switch",
+        ),
     ),
     "jtmspro": (
         XTSwitchEntityDescription(

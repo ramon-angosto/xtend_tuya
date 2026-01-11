@@ -265,10 +265,6 @@
             "xt_generic_binary_sensor": {
                 "name": "{name}"
             },
-
-
-
-
             "carbon_dioxide": {
                 "name": "Carbon dioxide"
             },
@@ -313,6 +309,18 @@
             },
             "wet": {
                 "name": "Wet"
+            },
+            "barrel_infrared": {
+                "name": "Barrel infrared sensor"
+            },
+            "security_status": {
+                "name": "Security status"
+            },
+            "gravity_induction": {
+                "name": "Gravity induction"
+            },
+            "enter_infrared": {
+                "name": "Entrance infrared sensor"
             }
         },
         "button": {
@@ -352,10 +360,6 @@
             "xt_generic_button": {
                 "name": "{name}"
             },
-
-
-
-
             "reset_duster_cloth": {
                 "name": "Reset duster cloth"
             },
@@ -408,11 +412,6 @@
             "door_3": {
                 "name": "Door 3"
             },
-
-
-
-
-
             "blind": {
                 "name": "Blind"
             },
@@ -427,10 +426,6 @@
             }
         },
         "event": {
-
-
-
-
             "numbered_button": {
                 "name": "Button {button_number}",
                 "state_attributes": {
@@ -454,10 +449,6 @@
             "xt_generic_light": {
                 "name": "{name}"
             },
-            
-
-
-
             "backlight": {
                 "name": "Backlight"
             },
@@ -738,10 +729,6 @@
             "xt_generic_number": {
                 "name": "{name}"
             },
-
-
-
-
             "alarm_delay": {
                 "name": "Alarm delay"
             },
@@ -1164,10 +1151,6 @@
             "xt_generic_select": {
                 "name": "{name}"
             },
-
-
-
-
             "basic_anti_flicker": {
                 "name": "Anti-flicker",
                 "state": {
@@ -1497,6 +1480,24 @@
             },
             "activepowerc": {
                 "name": "Active power C"
+            },
+            "mov_status": {
+                "name": "Motion",
+                "state": {
+                    "nobody": "Clear",
+                    "movement": "Movement",
+                    "move": "Movement",
+                    "none": "Clear"
+                }
+            },
+            "distance": {
+                "name": "Target distance"
+            },
+            "detection_near": {
+                "name": "Detection near"
+            },
+            "weight": {
+                "name": "Weight"
             },
             "acv": {
                 "name": "Grid voltage"
@@ -2254,10 +2255,6 @@
             "xt_generic_sensor": {
                 "name": "{name}"
             },
-
-
-
-
             "air_pressure": {
                 "name": "Air pressure"
             },
@@ -2599,6 +2596,9 @@
             "calibration": {
                 "name": "Calibration"
             },
+            "breath_switch": {
+                "name": "Breathing light"
+            },
             "clean": {
                 "name": "Clean"
             },
@@ -2797,10 +2797,6 @@
             "xt_generic_switch": {
                 "name": "{name}"
             },
-
-
-
-
             "anion": {
                 "name": "Anion"
             },
