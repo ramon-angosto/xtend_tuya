@@ -1343,6 +1343,22 @@ SENSORS: dict[str, tuple[XTSensorEntityDescription, ...]] = {
             state_class=SensorStateClass.MEASUREMENT,
             entity_registry_enabled_default=False,
         ),
+        XTSensorEntityDescription(
+            key = XTDPCode.FAULT,
+            name = "Error in litterbox",
+            #translation_key = "cat_litter_box_error",# sigue usando tu clave de traducción
+            # device_class    = SensorDeviceClass.ENUM,
+            # options = ["standly","clean","empty","clock","sleep","level"],
+            entity_category = EntityCategory.DIAGNOSTIC,
+        ),
+        XTSensorEntityDescription(
+            key = XTDPCode.CAT_STATUS,
+            name = "Litter Box state",
+            translation_key = "cat_litter_box_status_new",# sigue usando tu clave de traducción
+            # device_class    = SensorDeviceClass.ENUM,
+            # options = ["standly","clean","empty","clock","sleep","level"],
+            entity_category = EntityCategory.DIAGNOSTIC,
+        ),
         *TEMPERATURE_SENSORS,
     ),
     "ms_category": (

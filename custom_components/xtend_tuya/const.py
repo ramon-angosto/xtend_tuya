@@ -771,6 +771,7 @@ class XTDPCode(StrEnum):
     INDICATOR_LED = "indicator_led"
     INDICATOR_LIGHT = "indicator_light"
     INDUCTION_CLEAN = "Induction_Clean"
+    INDUCTION_CLEAN_2 = "induction_clean"
     INDUCTION_DELAY = "induction_delay"
     INDUCTION_INTERVAL = "induction_interval"
     INFRARED_SENSOR_SWITCH = "infrared_sensor_switch"
@@ -994,6 +995,7 @@ class XTDPCode(StrEnum):
     GRAVITY_INDUCTION     = "gravity_induction"
     ENTER_INFRARED        = "enter_infrared"
     MOV_STATUS            = "mov_status"
+    DEVELOPER_MODE = "developer_mode"
     # END OF DPCODES FROM XT
 
     @staticmethod

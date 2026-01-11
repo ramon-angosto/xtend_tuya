@@ -176,8 +176,10 @@ SWITCHES: dict[str, tuple[XTSwitchEntityDescription, ...]] = {
             entity_category=EntityCategory.CONFIG,
         ),
         XTSwitchEntityDescription(
-            key=XTDPCode.BREATH_SWITCH,
-            translation_key="breath_switch",
+            name="False‑breath filter",  # literal fallback
+            key=XTDPCode.FALSE_BREATH,
+            translation_key="false_breath",
+            entity_category=EntityCategory.CONFIG,
         ),
     ),
     "jtmspro": (
@@ -211,6 +213,10 @@ SWITCHES: dict[str, tuple[XTSwitchEntityDescription, ...]] = {
     # Automatic cat litter box
     # Note: Undocumented
     "msp": (
+        XTSwitchEntityDescription(
+                    key  = XTDPCode.SWITCH,
+                    name = "Encendido",
+        ),
         XTSwitchEntityDescription(
             key=XTDPCode.AUTO_CLEAN,
             translation_key="auto_clean",
@@ -278,6 +284,12 @@ SWITCHES: dict[str, tuple[XTSwitchEntityDescription, ...]] = {
             key=XTDPCode.INDUCTION_CLEAN,
             translation_key="induction_clean",
             entity_category=EntityCategory.CONFIG,
+        ),
+        XTSwitchEntityDescription(
+            key=XTDPCode.INDUCTION_CLEAN_2,
+            translation_key="auto_clean",
+            entity_category=EntityCategory.CONFIG,
+            icon="mdi:bacteria",
         ),
         XTSwitchEntityDescription(
             key=XTDPCode.INFRARED_SENSOR_SWITCH,
@@ -359,6 +371,11 @@ SWITCHES: dict[str, tuple[XTSwitchEntityDescription, ...]] = {
             key=XTDPCode.UV,
             translation_key="uv",
             entity_category=EntityCategory.CONFIG,
+        ),
+        XTSwitchEntityDescription(
+            key              = XTDPCode.DEVELOPER_MODE,
+            name             = "Modo desarrollador",
+            entity_category  = EntityCategory.CONFIG,
         ),
     ),
     "mzj": (),
