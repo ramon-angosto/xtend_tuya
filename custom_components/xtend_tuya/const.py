@@ -37,7 +37,6 @@ CONF_ACCESS_SECRET_OT = "access_secret"
 CONF_USERNAME_OT = "username"
 CONF_PASSWORD_OT = "password"
 CONF_COUNTRY_CODE = "country_code"
-CONF_APP_TYPE = "tuya_app_type"
 
 TUYA_CLIENT_ID = "HA_3y9q4ak7g4ephrvke"
 TUYA_SCHEMA = "haauthorize"
@@ -973,8 +972,6 @@ class XTDPCode(StrEnum):
     WORK_STATUS = "WorkStatus"
     XT_COVER_INVERT_CONTROL = "xt_cover_invert_control"
     XT_COVER_INVERT_STATUS = "xt_cover_invert_status"
-    WORK_MODE = "work_mode"  # Working mode
-    WORK_POWER = "work_power"
     CAT_STATUS = "status"
     SENSITIVITY_CZ        = "sensitivity_cz"
     SENSITIVITY_WD        = "sensitivity_wd"
