@@ -1208,7 +1208,8 @@ SENSORS: dict[str, tuple[XTSensorEntityDescription, ...]] = {
             # device_class    = SensorDeviceClass.ENUM,
             # options = ["standly","clean","empty","clock","sleep","level"],
             entity_category = EntityCategory.DIAGNOSTIC,
-        ),"""XTSensorEntityDescription(
+        ),
+        XTSensorEntityDescription(
             key=XTDPCode.AUTO_DEORDRIZER,
             translation_key="auto_deordrizer",
             state_class=SensorStateClass.MEASUREMENT,
