@@ -1196,7 +1196,7 @@ SENSORS: dict[str, tuple[XTSensorEntityDescription, ...]] = {
         XTSensorEntityDescription(
             key = XTDPCode.CAT_STATUS,
             name = "Estado de la caja",
-            translation_key = "cat_litter_box_status_new",# sigue usando tu clave de traducción
+            translation_key = "cat_litter_box_status",# sigue usando tu clave de traducción
             # device_class    = SensorDeviceClass.ENUM,
             # options = ["standly","clean","empty","clock","sleep","level"],
             entity_category = EntityCategory.DIAGNOSTIC,
@@ -1209,6 +1209,7 @@ SENSORS: dict[str, tuple[XTSensorEntityDescription, ...]] = {
             # options = ["standly","clean","empty","clock","sleep","level"],
             entity_category = EntityCategory.DIAGNOSTIC,
         ),
+        """
         XTSensorEntityDescription(
             key=XTDPCode.AUTO_DEORDRIZER,
             translation_key="auto_deordrizer",
