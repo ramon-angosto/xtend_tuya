@@ -152,10 +152,6 @@ BINARY_SENSORS: dict[str, tuple[XTBinarySensorEntityDescription, ...]] = {
         # If 0 is reported, it will not be counted
         # (today and the average number of toilet visits will be counted on the APP)
         XTBinarySensorEntityDescription(
-            key=XTDPCode.CLEANING_NUM,
-            translation_key="cleaning_num",
-        ),
-        XTBinarySensorEntityDescription(
             key=XTDPCode.MONITORING,
             device_class=BinarySensorDeviceClass.OCCUPANCY,
             entity_category=EntityCategory.DIAGNOSTIC,
