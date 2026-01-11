@@ -227,7 +227,7 @@ SWITCHES: dict[str, tuple[XTSwitchEntityDescription, ...]] = {
             name = "Vaciar y cambiar arena",
         ),
         XTSwitchEntityDescription(
-            key  = XTDPCode.INDUCTION_CLEAN_NEW,
+            key  = XTDPCode.INDUCTION_CLEAN_2,
             name = "Limpieza automática",
         ),
         XTSwitchEntityDescription(
