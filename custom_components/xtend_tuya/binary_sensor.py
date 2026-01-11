@@ -177,7 +177,33 @@ BINARY_SENSORS: dict[str, tuple[XTBinarySensorEntityDescription, ...]] = {
             translation_key="store_full_notify",
             entity_registry_enabled_default=True,
         ),
+        XTBinarySensorEntityDescription(
+            key=XTDPCode.BARREL_INFRARED,
+            translation_key="barrel_infrared",
+            device_class=BinarySensorDeviceClass.MOTION,
+            # entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+                
+        XTBinarySensorEntityDescription(
+            key=XTDPCode.SECURITY_STATUS,
+            translation_key="security_status",
+            device_class=BinarySensorDeviceClass.SAFETY,
+            # entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+        XTBinarySensorEntityDescription(
+            key=XTDPCode.GRAVITY_INDUCTION,
+            translation_key="gravity_induction",
+            device_class=BinarySensorDeviceClass.MOTION,
+            # entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+        XTBinarySensorEntityDescription(
+            key=XTDPCode.ENTER_INFRARED,
+            translation_key="enter_infrared",
+            device_class=BinarySensorDeviceClass.MOTION,
+            # entity_category=EntityCategory.DIAGNOSTIC,
+        ),
     ),
+
     # QT-08W Solar Intelligent Water Valve
     "sfkzq": (
         XTBinarySensorEntityDescription(
