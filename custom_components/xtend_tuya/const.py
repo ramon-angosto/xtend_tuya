@@ -996,6 +996,7 @@ class XTDPCode(StrEnum):
     ENTER_INFRARED        = "enter_infrared"
     MOV_STATUS            = "mov_status"
     DEVELOPER_MODE = "developer_mode"
+
     # END OF DPCODES FROM XT
 
     @staticmethod
