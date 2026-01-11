@@ -171,7 +171,7 @@ SWITCHES: dict[str, tuple[XTSwitchEntityDescription, ...]] = {
     "gyd": (),
     "hps": (
         XTSwitchEntityDescription(
-            key=XTDPCode.INDICATOR_LED,
+            key=XTDPCode.LED_ONOFF,#INDICATOR_LED,
             translation_key="indicator_light",
             entity_category=EntityCategory.CONFIG,
         ),
@@ -214,6 +214,57 @@ SWITCHES: dict[str, tuple[XTSwitchEntityDescription, ...]] = {
     # Note: Undocumented
     "msp": (
         XTSwitchEntityDescription(
+            key  = XTDPCode.SWITCH,
+            name = "Encendido",
+        ),
+        # ------------ Limpieza ------------
+        XTSwitchEntityDescription(
+            key  = XTDPCode.CLEAN,
+            name = "Limpieza manual",
+        ),
+        XTSwitchEntityDescription(
+            key  = XTDPCode.EMPTY,
+            name = "Vaciar y cambiar arena",
+        ),
+        XTSwitchEntityDescription(
+            key  = XTDPCode.INDUCTION_CLEAN_NEW,
+            name = "Limpieza automática",
+        ),
+        XTSwitchEntityDescription(
+            key  = XTDPCode.DEEP_CLEAN,
+            name = "Limpieza a fondo",
+        ),
+        XTSwitchEntityDescription(
+            key  = XTDPCode.LEVEL_CAT_LITTER,
+            name = "Nivelar arena",
+        ),
+        XTSwitchEntityDescription(
+            key  = XTDPCode.THIN_FECES,
+            name = "Modo heces blandas",
+        ),
+        # ----------- Ajustes / extras -----------
+        XTSwitchEntityDescription(
+            key              = XTDPCode.CHILD_LOCK,
+            name             = "Bloqueo infantil",
+            entity_category  = EntityCategory.CONFIG,
+            icon             = "mdi:human-child",
+        ),
+        XTSwitchEntityDescription(
+            key              = XTDPCode.INFRARED_SENSOR_SWITCH,
+            name             = "Sensor infrarrojos",
+            entity_category  = EntityCategory.CONFIG,
+        ),
+        XTSwitchEntityDescription(
+            key              = XTDPCode.STORE_FULL_NOTIFY,
+            name             = "Aviso bolsa llena",
+            entity_category  = EntityCategory.CONFIG,
+        ),
+        XTSwitchEntityDescription(
+            key              = XTDPCode.DEVELOPER_MODE,
+            name             = "Modo desarrollador",
+            entity_category  = EntityCategory.CONFIG,
+        ),
+        """XTSwitchEntityDescription(
                     key  = XTDPCode.SWITCH,
                     name = "Encendido",
         ),
@@ -376,7 +427,7 @@ SWITCHES: dict[str, tuple[XTSwitchEntityDescription, ...]] = {
             key              = XTDPCode.DEVELOPER_MODE,
             name             = "Modo desarrollador",
             entity_category  = EntityCategory.CONFIG,
-        ),
+        ),"""
     ),
     "mzj": (),
     "qccdz": (

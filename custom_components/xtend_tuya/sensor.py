@@ -1022,6 +1022,30 @@ SENSORS: dict[str, tuple[XTSensorEntityDescription, ...]] = {
     ),
     "hps": (
         XTSensorEntityDescription(
+            key=XTDPCode.MOV_STATUS,
+            translation_key="mov_status",
+        ),
+        XTSensorEntityDescription(
+            key=XTDPCode.ILLUMINANCE_VALUE,
+            translation_key="illuminance_value",
+            device_class=SensorDeviceClass.ILLUMINANCE,
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+        XTSensorEntityDescription(
+            key=XTDPCode.DISTANCE,
+            name="Target distance",
+            translation_key="distance",
+            device_class=SensorDeviceClass.DISTANCE,
+            entity_category=SensorStateClass.MEASUREMENT,
+        ),
+        XTSensorEntityDescription(
+            key=XTDPCode.DETECTION_NEAR,
+            name="Detection near",
+            translation_key="detection_near",
+            device_class=SensorDeviceClass.DISTANCE,
+            entity_category=SensorStateClass.MEASUREMENT,
+        ),
+        """XTSensorEntityDescription(
             key=XTDPCode.PRESENCE_STATE,
             translation_key="hps_presence_state",
         ),
@@ -1059,7 +1083,7 @@ SENSORS: dict[str, tuple[XTSensorEntityDescription, ...]] = {
             device_class=SensorDeviceClass.ILLUMINANCE,
             state_class=SensorStateClass.MEASUREMENT,
             entity_registry_enabled_default=True,
-        ),
+        ),"""
     ),
     # Formaldehyde Detector
     # Note: Not documented
@@ -1151,6 +1175,40 @@ SENSORS: dict[str, tuple[XTSensorEntityDescription, ...]] = {
     # Note: Undocumented
     "msp": (
         XTSensorEntityDescription(
+            key = XTDPCode.CAT_WEIGHT,
+            name = "Peso del gato (hoy)",
+            device_class = SensorDeviceClass.WEIGHT,
+            state_class = SensorStateClass.MEASUREMENT,
+        ),
+        XTSensorEntityDescription(
+            key = XTDPCode.EXCRETION_TIMES_DAY,
+            name = "Visitas diarias",
+            state_class = SensorStateClass.TOTAL_INCREASING,
+            reset_daily = True,
+        ),
+        XTSensorEntityDescription(
+            key = XTDPCode.EXCRETION_TIME_DAY,
+            name = "Tiempo total en caja (hoy)",
+            device_class = SensorDeviceClass.DURATION,
+            state_class = SensorStateClass.TOTAL_INCREASING,
+            reset_daily = True,
+        ),
+        XTSensorEntityDescription(
+            key = XTDPCode.CAT_STATUS,
+            name = "Estado de la caja",
+            translation_key = "cat_litter_box_status_new",# sigue usando tu clave de traducción
+            # device_class    = SensorDeviceClass.ENUM,
+            # options = ["standly","clean","empty","clock","sleep","level"],
+            entity_category = EntityCategory.DIAGNOSTIC,
+        ),
+        XTSensorEntityDescription(
+            key = XTDPCode.FAULT,
+            name = "Error de la caja",
+            #translation_key = "cat_litter_box_error",# sigue usando tu clave de traducción
+            # device_class    = SensorDeviceClass.ENUM,
+            # options = ["standly","clean","empty","clock","sleep","level"],
+            entity_category = EntityCategory.DIAGNOSTIC,
+        ),"""XTSensorEntityDescription(
             key=XTDPCode.AUTO_DEORDRIZER,
             translation_key="auto_deordrizer",
             state_class=SensorStateClass.MEASUREMENT,
@@ -1359,7 +1417,7 @@ SENSORS: dict[str, tuple[XTSensorEntityDescription, ...]] = {
             # options = ["standly","clean","empty","clock","sleep","level"],
             entity_category = EntityCategory.DIAGNOSTIC,
         ),
-        *TEMPERATURE_SENSORS,
+        *TEMPERATURE_SENSORS,"""
     ),
     "ms_category": (
         XTSensorEntityDescription(

@@ -294,6 +294,78 @@ NUMBERS: dict[str, tuple[XTNumberEntityDescription, ...]] = {
     ),
     "hps": (
         XTNumberEntityDescription(
+            key=XTDPCode.SENSITIVITY,
+            name="Sensitivity",
+            translation_key="sensitivity",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key=XTDPCode.NEAR_DETECTION,
+            name="Near‑detection distance",
+            translation_key="near_detection",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key=XTDPCode.FAR_DETECTION,
+            name="Far‑detection distance",
+            translation_key="far_detection",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key=XTDPCode.SENSITIVITY_CZ,
+            name="Motion sensitivity",
+            translation_key="sensitivity_cz",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key=XTDPCode.SENSITIVITY_WD,
+            name="Micro‑motion sensitivity",
+            translation_key="sensitivity_wd",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key=XTDPCode.WD_DETECTION,
+            name="Micro‑motion distance",
+            translation_key="wd_detection",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key=XTDPCode.MOV_MIN_DETECTION,
+            name="Min motion distance",
+            translation_key="mov_min_detection",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key=XTDPCode.MICRO_MIN_DETECTION,
+            name="Min micro‑motion distance",
+            translation_key="micro_min_detection",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key=XTDPCode.BRE_MIN_DETECTION,
+            name="Min breath distance",
+            translation_key="bre_min_detection",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key=XTDPCode.PIR_DELAY,
+            name="Presence Keep time",
+            translation_key="pir_delay_keep",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key=XTDPCode.ALARM_TIME,
+            name="Alarm time",
+            translation_key="alarm_time",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key=XTDPCode.FALSE_ALARM,
+            name="False‑alarm filter",
+            translation_key="false_alarm",
+            entity_category=EntityCategory.CONFIG,
+        ),
+        """XTNumberEntityDescription(
             key=XTDPCode.NONE_DELAY_TIME,
             translation_key="none_delay_time",
             entity_category=EntityCategory.CONFIG,
@@ -446,8 +518,7 @@ NUMBERS: dict[str, tuple[XTNumberEntityDescription, ...]] = {
             name="False‑alarm filter",
             translation_key="false_alarm",
             entity_category=EntityCategory.CONFIG,
-        ),
-
+        ),"""
     ),
     "jtmspro": (
         XTNumberEntityDescription(
@@ -513,6 +584,26 @@ NUMBERS: dict[str, tuple[XTNumberEntityDescription, ...]] = {
     ),
     "msp": (
         XTNumberEntityDescription(
+            key             = XTDPCode.INDUCTION_DELAY,
+            name            = "Espera antes de limpiar (min)",
+            entity_category = EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key             = XTDPCode.INDUCTION_INTERVAL,
+            name            = "Intervalo mínimo entre limpiezas (min)",
+            entity_category = EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key             = XTDPCode.CAPACITY_CALIBRATION,
+            name            = "Umbral cubo lleno",
+            entity_category = EntityCategory.CONFIG,
+        ),
+        XTNumberEntityDescription(
+            key             = XTDPCode.DETECTION_SENSITIVITY,
+            name            = "Sensibilidad de peso (kg)",
+            entity_category = EntityCategory.CONFIG,
+        ),
+        """XTNumberEntityDescription(
             key=XTDPCode.DEO_END_TIME,
             translation_key="deo_end_time",
             entity_category=EntityCategory.CONFIG,
@@ -578,7 +669,7 @@ NUMBERS: dict[str, tuple[XTNumberEntityDescription, ...]] = {
             key             = XTDPCode.DETECTION_SENSITIVITY,
             name            = "Weight sensitivity",
             entity_category = EntityCategory.CONFIG,
-        ),
+        ),"""
 
     ),
     "mzj": (

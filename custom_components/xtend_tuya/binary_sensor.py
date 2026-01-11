@@ -152,6 +152,17 @@ BINARY_SENSORS: dict[str, tuple[XTBinarySensorEntityDescription, ...]] = {
         # If 0 is reported, it will not be counted
         # (today and the average number of toilet visits will be counted on the APP)
         XTBinarySensorEntityDescription(
+            key = XTDPCode.TRASH_STATUS,
+            name = "Cubo lleno",
+            entity_category = EntityCategory.DIAGNOSTIC,
+            on_value=1,                                    # 1 = lleno
+        ),
+        XTBinarySensorEntityDescription(
+            key = XTDPCode.MONITORING,
+            name = "Gato dentro",
+            on_value=1,                                    # 1 = lleno
+        ),
+        """XTBinarySensorEntityDescription(
             key=XTDPCode.MONITORING,
             device_class=BinarySensorDeviceClass.OCCUPANCY,
             entity_category=EntityCategory.DIAGNOSTIC,
@@ -197,7 +208,7 @@ BINARY_SENSORS: dict[str, tuple[XTBinarySensorEntityDescription, ...]] = {
             translation_key="enter_infrared",
             device_class=BinarySensorDeviceClass.MOTION,
             # entity_category=EntityCategory.DIAGNOSTIC,
-        ),
+        ),"""
     ),
 
     # QT-08W Solar Intelligent Water Valve

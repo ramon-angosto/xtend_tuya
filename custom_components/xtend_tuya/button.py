@@ -167,7 +167,7 @@ BUTTONS: dict[str, tuple[XTButtonEntityDescription, ...]] = {
         ),
     ),
     "kg": (*CONSUMPTION_BUTTONS,),
-    "msp": (
+    """"msp": (
         XTButtonEntityDescription(
             key=XTDPCode.BAG_CHANGE_MODE,
             translation_key="change_litter_bag",
@@ -203,7 +203,7 @@ BUTTONS: dict[str, tuple[XTButtonEntityDescription, ...]] = {
             translation_key="manual_clean",
             entity_category=EntityCategory.CONFIG,
         ),
-    ),
+    ),"""
     "qccdz": (
         XTButtonEntityDescription(
             key=XTDPCode.CLEAR_ENERGY,
