@@ -29,19 +29,13 @@ class XTDPCodeIntegerNoMinMaxCheckWrapper(TuyaDPCodeTypeInformationWrapper[XTInt
         return round(value * (10**self.type_information.scale))
 
 class XTDPCodeBitmapLabelsWrapper(TuyaDPCodeTypeInformationWrapper[TuyaIntegerTypeInformation]):
-    """Bitmap DP wrapper that exposes a single sensor with decoded labels.
+    """Expose a BITMAP dpcode (bitmask) as a single sensor with decoded labels.
 
-    Tuya uses BITMAP dptype for bit masks like:
-      - 0b000 -> no fault
-      - 0b101 -> bits 0 and 2 active
+    Example output:
+      - "00" (or "0") => no faults
+      - "E01,E03"     => bits set correspond to those labels
 
-    The official Tuya HA wrapper set tends to focus on exposing *one binary sensor per bit*.
-    For devices where users prefer a *single entity*, this wrapper converts the bitmap
-    to a comma-separated string of active labels (e.g. "E01,E03"), or "00" when empty.
-
-    Notes:
-      - Labels are extracted from the dp "values" JSON (valueDesc) when available.
-      - When the device reports bits beyond the known label list, we add "bitN".
+    This is useful when you prefer ONE entity instead of multiple binary entities.
     """
 
     _DPTYPE = TuyaIntegerTypeInformation
@@ -52,41 +46,88 @@ class XTDPCodeBitmapLabelsWrapper(TuyaDPCodeTypeInformationWrapper[TuyaIntegerTy
         type_information: TuyaIntegerTypeInformation,
         labels: Optional[list[str]] = None,
     ) -> None:
-        """Init XT bitmap wrapper."""
+        """Init bitmap wrapper."""
         super().__init__(dpcode, type_information)
         self._labels: list[str] = labels or []
+        # This wrapper is read-only and returns a decoded string, so unit is empty.
+        self.native_unit = ""
 
     @classmethod
     def find_dpcode(cls, device: TuyaCustomerDevice, dpcode: str, **kwargs: Any):
-        """Find a bitmap dpcode and wrap it as an integer + decoded label sensor."""
-        status_range = getattr(device, "status_range", {}) or {}
-        if dpcode not in status_range:
+        """Find a BITMAP dpcode and build a wrapper that returns decoded labels.
+
+        Restriction: only handle dpcode == "fault" to avoid wrapping unrelated bitmaps.
+        """
+        if str(dpcode) != "fault":
             return None
 
-        sr = status_range[dpcode]
+        status_range = getattr(device, "status_range", None) or {}
+        if not isinstance(status_range, dict):
+            return None
+
+        sr = status_range.get(dpcode)
+        if sr is None:
+            return None
+
+        # Only proceed if the dp really is a BITMAP
         if getattr(sr, "type", None) != TuyaDPType.BITMAP:
             return None
 
-        # Try to read labels from the 'values' JSON (valueDesc)
-        labels: list[str] = []
+        # Parse valueDesc / values to extract labels
         values_raw = getattr(sr, "values", "{}") or "{}"
-        try:
-            values_dict = json.loads(values_raw) if isinstance(values_raw, str) else {}
-            labels_value = values_dict.get("label", [])
-            if isinstance(labels_value, list):
-                labels = [str(x) for x in labels_value]
-        except Exception:
-            labels = []
+        values_dict: dict[str, Any] = {}
+        if isinstance(values_raw, dict):
+            values_dict = values_raw
+        elif isinstance(values_raw, str):
+            try:
+                parsed = json.loads(values_raw) if values_raw else {}
+                if isinstance(parsed, dict):
+                    values_dict = parsed
+            except Exception:
+                values_dict = {}
 
-        # Map bitmap to a "plain integer" type info (no scaling, huge max)
-        type_info = TuyaIntegerTypeInformation(
-            dpcode=dpcode,
-            min=0,
-            max=2**31 - 1,
-            scale=0,
-            step=1,
-            unit="",
-        )
+        labels: list[str] = []
+        label_value = values_dict.get("label", [])
+        if isinstance(label_value, list):
+            labels = [str(x) for x in label_value]
+
+        # Build a minimal IntegerTypeInformation for HA's wrapper interface.
+        # Some HA versions require keyword-only 'type_data'.
+        max_int = 2**31 - 1
+
+        type_data: dict[str, Any] = {
+            "min": 0,
+            "max": max_int,
+            "scale": 0,
+            "step": 1,
+            "unit": "",
+        }
+        # Keep any extra metadata Tuya provided (like "label")
+        for k, v in values_dict.items():
+            if k not in type_data:
+                type_data[k] = v
+
+        try:
+            type_info = TuyaIntegerTypeInformation(
+                dpcode=dpcode,
+                min=0,
+                max=max_int,
+                scale=0,
+                step=1,
+                unit="",
+                type_data=type_data,
+            )
+        except TypeError:
+            # Backward compatibility with older HA versions that did not require type_data
+            type_info = TuyaIntegerTypeInformation(
+                dpcode=dpcode,
+                min=0,
+                max=max_int,
+                scale=0,
+                step=1,
+                unit="",
+            )
+
         return cls(dpcode, type_info, labels=labels)
 
     def read_device_status(self, device: TuyaCustomerDevice):  # type: ignore[override]
@@ -95,36 +136,34 @@ class XTDPCodeBitmapLabelsWrapper(TuyaDPCodeTypeInformationWrapper[TuyaIntegerTy
         if raw_value is None:
             return None
 
-        # Some firmwares send bitmap as stringified int
         try:
             value_int = int(raw_value)
         except Exception:
-            return None
+            # If firmware sends something unexpected, show raw
+            return str(raw_value)
 
         if value_int == 0:
-            # If the device provides an explicit "no fault" label, use it.
-            if "00" in self._labels:
-                return "00"
-            return "0"
+            # Prefer "00" if Tuya provides it as the "OK" label
+            return "00" if "00" in self._labels else "0"
 
         active: list[str] = []
         labels_len = len(self._labels)
 
         bit_index = 0
-        temp = value_int
-        while temp:
-            if temp & 1:
+        tmp = value_int
+        while tmp:
+            if tmp & 1:
                 if bit_index < labels_len:
                     label = self._labels[bit_index]
-                    if label != "00":
+                    # Skip the "no fault" placeholder if it exists
+                    if label not in ("00", "0"):
                         active.append(label)
                 else:
                     active.append(f"bit{bit_index}")
-            temp >>= 1
+            tmp >>= 1
             bit_index += 1
 
         if not active:
             return "00" if "00" in self._labels else "0"
 
-        # Stable ordering: lowest bit first
         return ",".join(active)
