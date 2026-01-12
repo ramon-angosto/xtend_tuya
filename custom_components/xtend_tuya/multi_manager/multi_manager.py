@@ -209,6 +209,126 @@ class MultiManager:  # noqa: F811
         self._enable_multi_map_device_alignment()
         self._process_pending_messages()
 
+    # ──────────────────────────────────────────────────────────────
+    # Local post-processing fixes (added)
+    # ──────────────────────────────────────────────────────────────
+    def _apply_xtend_tuya_post_cloud_fixes(self, device: XTDevice) -> None:
+        """Apply conservative metadata fixes after CloudFixes.
+
+        Why this exists:
+        Some Tuya devices report incomplete enum metadata (e.g. status range only ["sleep"])
+        but still send live values like "standly". Enum wrappers may reject those and HA
+        shows 'unknown'.
+
+        Strategy:
+        1) If device.data_model contains the enum range for a dpcode, merge it in.
+        2) Otherwise, fall back to a known-safe expected list for specific categories.
+        """
+        try:
+            # If data_model provides the full enum range for 'status', prefer it.
+            dm_status_range = self._read_enum_range_from_data_model(device, dpcode="status")
+            if dm_status_range:
+                self._ensure_enum_range_contains(device=device, dpcode="status", expected=dm_status_range)
+                return
+
+            # Fallback for known devices/categories
+            if getattr(device, "category", None) == "msp":
+                self._ensure_enum_range_contains(
+                    device=device,
+                    dpcode="status",
+                    expected=["standly", "clean", "empty", "clock", "sleep", "level"],
+                )
+        except Exception as err:
+            LOGGER.debug(
+                "Post-cloud fixes failed for device %s (%s): %s",
+                getattr(device, "name", "?"),
+                getattr(device, "id", "?"),
+                err,
+            )
+
+    def _read_enum_range_from_data_model(self, device: XTDevice, dpcode: str) -> list[str]:
+        """Extract enum range list from device.data_model if available."""
+        data_model = getattr(device, "data_model", None)
+        if not isinstance(data_model, dict):
+            return []
+
+        services = data_model.get("services")
+        if not isinstance(services, list):
+            return []
+
+        for service in services:
+            if not isinstance(service, dict):
+                continue
+            props = service.get("properties") or []
+            if not isinstance(props, list):
+                continue
+            for prop in props:
+                if not isinstance(prop, dict):
+                    continue
+                if prop.get("code") != dpcode:
+                    continue
+                type_spec = prop.get("typeSpec") or {}
+                if not isinstance(type_spec, dict):
+                    continue
+                rng = type_spec.get("range")
+                if isinstance(rng, list) and rng:
+                    # Ensure strings and stable ordering
+                    return [str(x) for x in rng]
+        return []
+
+    def _ensure_enum_range_contains(self, device: XTDevice, dpcode: str, expected: list[str]) -> None:
+        """Patch both status_range and function valueDesc ranges when present."""
+        self._patch_value_desc_range(device, container_name="status_range", dpcode=dpcode, expected=expected)
+        self._patch_value_desc_range(device, container_name="function", dpcode=dpcode, expected=expected)
+
+    def _patch_value_desc_range(
+        self,
+        device: XTDevice,
+        container_name: str,
+        dpcode: str,
+        expected: list[str],
+    ) -> None:
+        """Patch the 'range' field inside the JSON valueDesc string.
+
+        This is intentionally conservative: it only expands the range (never shrinks it).
+        """
+        container = getattr(device, container_name, None)
+        if not isinstance(container, dict) or dpcode not in container:
+            return
+
+        item = container[dpcode]
+        values_raw = getattr(item, "values", "{}") or "{}"
+
+        try:
+            values_dict = json.loads(values_raw) if isinstance(values_raw, str) else {}
+        except Exception:
+            values_dict = {}
+
+        current_range = values_dict.get("range", [])
+        if not isinstance(current_range, list):
+            current_range = []
+
+        # Build a superset range: expected values first, then keep any existing ones
+        new_range: list[str] = []
+        for v in expected:
+            sv = str(v)
+            if sv not in new_range:
+                new_range.append(sv)
+        for v in current_range:
+            sv = str(v)
+            if sv not in new_range:
+                new_range.append(sv)
+
+        if new_range == current_range:
+            return
+
+        values_dict["range"] = new_range
+        try:
+            item.values = json.dumps(values_dict)
+        except Exception:
+            # If the underlying object is frozen/immutable, just skip.
+            return
+
     def _process_pending_messages(self):
         self.is_ready_for_messages = True
         for messages in self.pending_messages:
