@@ -66,6 +66,7 @@ from .ha_tuya_integration.tuya_integration_imports import (
 )
 from .models import (
     XTDPCodeIntegerNoMinMaxCheckWrapper,
+    XTDPCodeBitmapLabelsWrapper,
 )
 
 COMPOUND_KEY: list[str | tuple[str, ...]] = ["key", "dpcode"]
@@ -110,7 +111,13 @@ def xt_get_dpcode_wrapper(
                 description.key,
                 description.recalculate_scale_for_percentage_threshold,
             )
-    return tuya_sensor_get_dpcode_wrapper(device, description)
+
+    # First try the upstream Tuya wrapper resolution.
+    if wrapper := tuya_sensor_get_dpcode_wrapper(device, description):
+        return wrapper
+
+    # Fallback to XT's generic wrapper resolver (supports custom wrapper_class).
+    return xt_get__generic_dpcode_wrapper(device, description)
 
 
 @dataclass(frozen=True)
@@ -1192,14 +1199,17 @@ SENSORS: dict[str, tuple[XTSensorEntityDescription, ...]] = {
             device_class = SensorDeviceClass.DURATION,
             state_class = SensorStateClass.TOTAL_INCREASING,
             reset_daily = True,
+            entity_registry_enabled_default=True,
+
         ),
         XTSensorEntityDescription(
             key = XTDPCode.CAT_STATUS,
             name = "Estado de la caja",
-            translation_key = "cat_litter_box_status",# sigue usando tu clave de traducción
+            translation_key = "cat_litter_box_status",  # Keep existing translation key
             # device_class    = SensorDeviceClass.ENUM,
             # options = ["standly","clean","empty","clock","sleep","level"],
             entity_category = EntityCategory.DIAGNOSTIC,
+            entity_registry_enabled_default = True,
         ),
         XTSensorEntityDescription(
             key = XTDPCode.FAULT,
@@ -1207,7 +1217,10 @@ SENSORS: dict[str, tuple[XTSensorEntityDescription, ...]] = {
             #translation_key = "cat_litter_box_error",# sigue usando tu clave de traducción
             # device_class    = SensorDeviceClass.ENUM,
             # options = ["standly","clean","empty","clock","sleep","level"],
+            wrapper_class = (XTDPCodeBitmapLabelsWrapper,),
             entity_category = EntityCategory.DIAGNOSTIC,
+            entity_registry_enabled_default=True,
+
         ),
         """
         XTSensorEntityDescription(

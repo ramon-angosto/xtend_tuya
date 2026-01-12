@@ -1,5 +1,6 @@
 from __future__ import annotations
 import copy
+import json
 import importlib
 import os
 import asyncio
@@ -199,6 +200,9 @@ class MultiManager:  # noqa: F811
             # Applied twice because some parts at the end of apply_fix would change values of previous calls
             CloudFixes.apply_fixes(device, self)
             CloudFixes.apply_fixes(device, self)
+
+            # Local post-processing fixes (conservative)
+            self._apply_xtend_tuya_post_cloud_fixes(device)
 
             #Don't allow changes to DPCodes after the global initialization
             device.force_compatibility = True
