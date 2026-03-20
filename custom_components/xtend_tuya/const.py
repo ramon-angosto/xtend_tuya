@@ -156,6 +156,14 @@ class XTMultiManagerProperties(StrEnum):
     CAMERA_DEVICE_ID = "camera_device_id"
     IR_DEVICE_ID = "ir_device_id"
 
+class XTLockingMechanism(StrEnum):
+    """Locking mecanism for the multi manager"""
+
+    AUTO            = "auto"
+    DOOR_OPEN       = "door_open"
+    DOOR_OPERATE    = "door_operate"
+    DPCODE_COMMAND  = "dpcode_command"
+
 
 class XTMultiManagerPostSetupCallbackPriority(IntEnum):
     PRIORITY1 = 1
@@ -241,7 +249,6 @@ class WorkMode(StrEnum):
     MUSIC = "music"
     SCENE = "scene"
     WHITE = "white"
-
 
 class XTDPCode(StrEnum):
     """Data Point Codes used by XT.
@@ -756,6 +763,13 @@ class XTDPCode(StrEnum):
     FACTORY_RESET = "factory_reset"
     FAULT2 = "Fault"
     FLOW_VELOCITY = "flow_velocity"
+    FORWARD_ENERGY_TOTAL2 = "forward_energy_total2"
+    FORWARD_ENERGY_TOTAL2_TODAY = "forward_energy_total2_today"
+    FORWARD_ENERGY_TOTAL2_THIS_MONTH = "forward_energy_total2_this_month"
+    FORWARD_ENERGY_TOTAL2_THIS_YEAR = "forward_energy_total2_this_year"
+    FORWARD_ENERGY_TOTAL_TODAY = "forward_energy_total_today"
+    FORWARD_ENERGY_TOTAL_THIS_MONTH = "forward_energy_total_this_month"
+    FORWARD_ENERGY_TOTAL_THIS_YEAR = "forward_energy_total_this_year"
     FREQUENCY = "Frequency"
     GET_HUM = "get_hum"
     GET_TEMP = "get_temp"
@@ -794,7 +808,7 @@ class XTDPCode(StrEnum):
     MINITEMP_SET = "minitemp_set"
     MONITORING = "monitoring"
     MODE1 = "mode1"  # Working mode / Mode
-    MODE2 = "Mode"
+    MODE_CAP = "Mode"
     MOVEDISTANCE_MAX = "movedistance_max"
     MOVEDISTANCE_MIN = "movedistance_min"
     MOVESENSITIVITY = "movesensitivity"
@@ -833,6 +847,13 @@ class XTDPCode(StrEnum):
     POWERON = "poweron"
     POWERONOFF = "PowerOnOff"
     POWER_CONSUMPTION = "power_consumption"
+    POWER_CONSUMPTION2 = "power_consumption2"
+    POWER_CONSUMPTION2_TODAY = "power_consumption2_today"
+    POWER_CONSUMPTION2_THIS_MONTH = "power_consumption2_this_month"
+    POWER_CONSUMPTION2_THIS_YEAR = "power_consumption2_this_year"
+    POWER_CONSUMPTION_TODAY = "power_consumption_today"
+    POWER_CONSUMPTION_THIS_MONTH = "power_consumption_this_month"
+    POWER_CONSUMPTION_THIS_YEAR = "power_consumption_this_year"
     POWER_FACTOR = "power_factor"
     POWER_FACTOR_B = "power_factor_b"
     POWER_SET = "power_set"
@@ -895,6 +916,7 @@ class XTDPCode(StrEnum):
     STANDBY_TIME = "standby_time"
     START_TIME = "start_time"
     STORE_FULL_NOTIFY = "store_full_notify"
+    SWITCH_CAP = "Switch"
     SWITCH_ENABLED = "switch_enabled"
     SWITCH_ON = "switch_on"
     SWITCH_PIR = "switch_pir"
@@ -912,8 +934,12 @@ class XTDPCode(StrEnum):
     TEMP_ALARM = "temp_alarm"
     TEMP_BOTTOM = "temp_bottom"
     TEMP_CALIBRATION = "temp_calibration"
+    TEMP_CURRENT_CAP = "Temp_current"
+    TEMP_CURRENT_F_CAP = "Temp_current_f"
     TEMP_SENSITIVITY = "temp_sensitivity"
+    TEMP_SET_CAP = "Temp_set"
     TEMP_SET_1 = "temp_set_1"  # Set the warm temperature in °C
+    TEMP_SET_F_CAP = "Temp_set_f"
     TEMP_TOP = "temp_top"
     TEMP_UNIT = "temp_unit"
     THIN_FECES = "thin_feces"
@@ -939,6 +965,11 @@ class XTDPCode(StrEnum):
     UNLOCK_PASSWORD = "unlock_password"
     UNLOCK_PHONE_REMOTE = "unlock_phone_remote"
     UNLOCK_VOICE_REMOTE = "unlock_voice_remote"
+    CARD_UNLOCK_USER = "card_unlock_user"
+    FACE_UNLOCK_USER = "face_unlock_user"
+    HAND_UNLOCK_USER = "hand_unlock_user"
+    FINGERPRINT_UNLOCK_USER = "fingerprint_unlock_user"
+    PASSWORD_UNLOCK_USER = "password_unlock_user"
     USAGE_TIMES = "usage_times"
     USE_TIME_1 = "use_time_1"
     USE_TIME_2 = "use_time_2"
@@ -997,6 +1028,7 @@ class XTDPCode(StrEnum):
     MOV_STATUS            = "mov_status"
     DEVELOPER_MODE = "developer_mode"
 
+    XT_LOCK_UNLOCK_MECHANISM = "xt_lock_unlock_mechanism"
     # END OF DPCODES FROM XT
 
     @staticmethod
@@ -1006,6 +1038,85 @@ class XTDPCode(StrEnum):
         except Exception:
             return XTDPCode(dpcode)
 
+
+UOM_MAPPING_DICT: dict[str, str | None] = {
+    "kwh": "kWh",
+    "kW·h": "kWh",
+
+    "kVar": "kvar",
+
+    "％": "%",
+
+    "℃": "°C",
+    "C": "°C",
+
+    "℉": "°F",
+
+    "分钟": "min",
+
+    "gal ": "gal",
+
+    "小时": "h",
+    "秒": "s",
+
+    "": None,
+    "ADC": None,
+    "格": None,
+    "电机电流>1k，瞬间<1k，除臭2K>60": None,
+    "线程号": None,
+    "次": None,
+}
+
+DPCODE_PREFERED_DEVICE_CLASS: dict[str, str | None] = {
+    "active_energy_total": "energy",
+    "add_ele1": "energy",
+    "today_acc_energy1": "energy",
+    "today_energy_add1": "energy",
+    "total_energy1": "energy",
+
+    "ALARM_HIGH_HUMID": "humidity",
+    "ALARM_LOW_HUMID": "humidity",
+    "AUTO_HIGH_HUMID": "humidity",
+    "AUTO_LOW_HUMID": "humidity",
+    "hum_sensitivity": "humidity",
+    "humidity_now": "humidity",
+    "humidity_set": "humidity",
+    "humidity_value": "humidity",
+    "huid_revise": "humidity",
+    "maxhum_set": "humidity",
+    "minihum_set": "humidity",
+
+    "ALARM_HIGH_TEMP": "temperature",
+    "ALARM_LOW_TEMP": "temperature",
+    "AUTO_HIGH_TEMP": "temperature",
+    "AUTO_LOW_TEMP": "temperature",
+    "current_temp": "temperature",
+    "lower_temp": "temperature",
+    "maxtemp_set": "temperature",
+    "minitemp_set": "temperature",
+    "set_temp": "temperature",
+    "temp_current": "temperature",
+    "temp_current_f": "temperature",
+    "temp_now_huas": "temperature",
+    "temp_revise": "temperature",
+    "temp_sensitivity": "temperature",
+    "temp_set": "temperature",
+    "temp_set_1": "temperature",
+    "temp_set_f": "temperature",
+    "temp_set_huas": "temperature",
+    "upper_temp": "temperature",
+    "upper_temp_f": "temperature",
+
+    "qidongwencha": "temperature_delta",
+
+    "water_total_h": "water",
+
+    "percent_control": None,
+    "percent_state": None,
+    "position_best": None,
+    "switch_wrap": None,
+    "valve_open_degree": None,
+}
 
 @dataclass
 class Country:

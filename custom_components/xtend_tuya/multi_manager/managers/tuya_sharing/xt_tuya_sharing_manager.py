@@ -3,7 +3,6 @@ This file contains all the code that inherit from Tuya integration
 """
 
 from __future__ import annotations
-import time
 from typing import Any
 from tuya_sharing.manager import (
     Manager,
@@ -23,6 +22,7 @@ from .xt_tuya_sharing_api import (
 from ....const import (
     MESSAGE_SOURCE_TUYA_SHARING,
     XTDeviceSourcePriority,
+    XTLockingMechanism,
 )
 from ...multi_manager import (
     MultiManager,
@@ -44,7 +44,7 @@ class XTSharingDeviceManager(Manager):  # noqa: F811
         )
         self.multi_manager = multi_manager
         self.terminal_id: str | None = None
-        self.mq = None
+        self.mq: mq.SharingMQ | None = None
         self.customer_api: XTSharingAPI | None = None
         self.home_repository: HomeRepository | None = None
         self.device_repository: dr.XTSharingDeviceRepository | None = None
@@ -89,7 +89,7 @@ class XTSharingDeviceManager(Manager):  # noqa: F811
         device = [
             device
             for device in self.device_map.values()
-            if hasattr(device, "id") and getattr(device, "set_up", False)
+            #if hasattr(device, "id") and getattr(device, "set_up", False)
         ]
 
         if self.customer_api is not None:
@@ -169,8 +169,6 @@ class XTSharingDeviceManager(Manager):  # noqa: F811
 
     def add_device_by_id(self, device_id: str):
         device_ids = [device_id]
-        # wait for es sync
-        time.sleep(1)
 
         self._update_device_list_info_cache(device_ids)
 
@@ -209,6 +207,6 @@ class XTSharingDeviceManager(Manager):  # noqa: F811
             return
         super().send_commands(device_id, commands)
 
-    def send_lock_unlock_command(self, device: XTDevice, lock: bool) -> bool:
+    def send_lock_unlock_command(self, device: XTDevice, lock: bool, force_unlock_mechanism: XTLockingMechanism = XTLockingMechanism.AUTO) -> bool:
         # I didn't find a way to implement this using the Sharing SDK...
         return False

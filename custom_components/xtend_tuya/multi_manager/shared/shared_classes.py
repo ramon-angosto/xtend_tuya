@@ -17,7 +17,6 @@ import custom_components.xtend_tuya.util as util
 import custom_components.xtend_tuya.entity as entity
 from ...ha_tuya_integration.tuya_integration_imports import (
     TuyaDPType,
-    tuya_util_parse_dptype,
 )
 from ...const import (
     LOGGER,
@@ -38,7 +37,7 @@ class DeviceWatcher:
         dev_id: str,
         message: str,
         device: XTDevice | None = None,
-        print_stack: bool = False,
+        print_stack: bool = True,
     ):
         if self.is_watched(dev_id):
             if dev_id in self.multi_manager.device_map:
@@ -72,16 +71,20 @@ class HomeAssistantXTData(NamedTuple):
 
 type XTConfigEntry = ConfigEntry[HomeAssistantXTData]
 
-
 @dataclass
-class XTDeviceStatusRange:
+class XTDeviceStatusFunctionShared:
     code: str = ""
     type: TuyaDPType | None = None
     values: str = "{}"
     dp_id: int = 0
 
+@dataclass
+class XTDeviceStatusRange(XTDeviceStatusFunctionShared):
+
+    report_type: Optional[str] = None
+
     def __repr__(self) -> str:
-        return f"StatusRange(code={self.code}, type={self.type}, values={self.values}, dp_id={self.dp_id})"
+        return f"StatusRange(code={self.code}, type={self.type}, values={self.values}, dp_id={self.dp_id}), report_type={self.report_type})"
 
     @staticmethod
     def from_compatible_status_range(status_range: Any):
@@ -90,7 +93,7 @@ class XTDeviceStatusRange:
         else:
             code = ""
         if hasattr(status_range, "type"):
-            type = tuya_util_parse_dptype(status_range.type)
+            type = TuyaDPType.try_parse(status_range.type)
         else:
             type = None
         if hasattr(status_range, "values"):
@@ -101,17 +104,17 @@ class XTDeviceStatusRange:
             dp_id = status_range.dp_id
         else:
             dp_id = 0
-        return XTDeviceStatusRange(code=code, type=type, values=values, dp_id=dp_id)
+        if hasattr(status_range, "report_type"):
+            report_type = status_range.report_type
+        else:
+            report_type = None
+        return XTDeviceStatusRange(code=code, type=type, values=values, dp_id=dp_id, report_type=report_type)
 
 
 @dataclass
-class XTDeviceFunction:
-    code: str = ""
-    type: TuyaDPType | None = None
+class XTDeviceFunction(XTDeviceStatusFunctionShared):
     desc: str = ""
     name: str = ""
-    values: str = "{}"
-    dp_id: int = 0
 
     def __repr__(self) -> str:
         return f"Function(code={self.code}, type={self.type}, desc={self.desc}, name={self.name}, values={self.values}, dp_id={self.dp_id})"
@@ -123,7 +126,7 @@ class XTDeviceFunction:
         else:
             code = ""
         if hasattr(function, "type"):
-            type = tuya_util_parse_dptype(function.type)
+            type = TuyaDPType.try_parse(function.type)
         else:
             type = None
         if hasattr(function, "values"):
@@ -189,6 +192,7 @@ class XTDevice(TuyaDevice):
 
     class XTDevicePreference(StrEnum):
         IS_A_COVER_DEVICE = "IS_A_COVER_DEVICE"
+        CLIMATE_DEVICE_ENTITY = "CLIMATE_DEVICE_ENTITY"
         LOCK_MANUAL_UNLOCK_COMMAND = "LOCK_MANUAL_UNLOCK_COMMAND"
         LOCK_GET_SUPPORTED_UNLOCK_TYPES = "LOCK_GET_SUPPORTED_UNLOCK_TYPES"
         LOCK_GET_DOOR_LOCK_PASSWORD_TICKET = "LOCK_GET_DOOR_LOCK_PASSWORD_TICKET"
@@ -342,6 +346,13 @@ class XTDevice(TuyaDevice):
                 for alias in local_strategy.get("status_code_alias", {}):
                     return_list[alias] = status_code
         return return_list
+    
+    def get_status_code_aliases(self, status_code: str) -> list[str]:
+        alias_list: list[str] = []
+        for local_strategy in self.local_strategy.values():
+            if local_strategy.get("status_code", None) == status_code:
+                alias_list.extend(local_strategy.get("status_code_alias", []))
+        return alias_list
 
     def replace_status_code_with_another(
         self, orig_status_code: str, new_status_code: str, skip_force_compatibility: bool = False
@@ -434,7 +445,7 @@ class XTDevice(TuyaDevice):
                 if config_item := local_strategy.get("config_item"):
                     if dp_info.dptype is None:
                         if ls_dptype := config_item.get("valueType"):
-                            dp_info.dptype = tuya_util_parse_dptype(ls_dptype)
+                            dp_info.dptype = TuyaDPType.try_parse(ls_dptype)
                     if ls_value_descr := config_item.get("valueDesc"):
                         try:
                             value_descr_dict = cast(

@@ -9,7 +9,10 @@ from .shared_classes import (
 )
 from ...ha_tuya_integration.tuya_integration_imports import (
     TuyaDPType,
-    tuya_util_parse_dptype,
+)
+from ...const import (
+    UOM_MAPPING_DICT,
+    LOGGER,
 )
 import custom_components.xtend_tuya.multi_manager.multi_manager as mm
 
@@ -18,11 +21,12 @@ class CloudFixes:
     @staticmethod
     def apply_fixes(device: XTDevice, multi_manager: mm.MultiManager | None = None):
         if multi_manager is not None:
-            multi_manager.device_watcher.report_message(
-                device.id,
-                f"CloudFixes for source {device.source} BEFORE: {device}",
-                device=device,
-            )
+            # multi_manager.device_watcher.report_message(
+            #     device.id,
+            #     f"CloudFixes for source {device.source} BEFORE: {device}",
+            #     device=device,
+            # )
+            pass
         CloudFixes._unify_data_types(device)
         CloudFixes._unify_added_attributes(device)
         CloudFixes._map_dpid_to_codes(device)
@@ -30,17 +34,21 @@ class CloudFixes:
         CloudFixes._fix_incorrect_percentage_scale(device)
         CloudFixes._align_valuedescr(device)
         CloudFixes._fix_missing_local_strategy_enum_mapping_map(device)
+        CloudFixes._fix_missing_range_values_using_data_model(device)
         CloudFixes._fix_missing_range_values_using_local_strategy(device)
         CloudFixes._fix_missing_aliases_using_status_format(device)
         CloudFixes._remove_status_that_are_local_strategy_aliases(device)
         CloudFixes._fix_unaligned_function_or_status_range(device)
         CloudFixes._strip_valuedescr_of_non_label_fields_for_bitmaps(device)
+        CloudFixes._fix_isolated_status_range_and_function(device)
+        CloudFixes._align_uom(device)
         if multi_manager is not None:
-            multi_manager.device_watcher.report_message(
-                device.id,
-                f"CloudFixes for source {device.source} AFTER: {device}",
-                device=device,
-            )
+            # multi_manager.device_watcher.report_message(
+            #     device.id,
+            #     f"CloudFixes for source {device.source} AFTER: {device}",
+            #     device=device,
+            # )
+            pass
 
     @staticmethod
     def fix_incorrect_percent_scale_forced(
@@ -133,6 +141,30 @@ class CloudFixes:
                         else:
                             values_dict = {}
                         config_item["valueDesc"] = json.dumps(values_dict)
+
+    @staticmethod
+    def _fix_isolated_status_range_and_function(device: XTDevice):
+        # Remove status_ranges and functions that are not linked to any local strategy item or status
+        status_range_pop: list[str] = []
+        for status in device.status_range:
+            dp_id: int = device.status_range[status].dp_id
+            if dp_id != 0 and dp_id in device.local_strategy:
+                continue
+            if status in device.status:
+                continue
+            status_range_pop.append(status)
+        for status in status_range_pop:
+            device.status_range.pop(status)
+        function_pop: list[str] = []
+        for function in device.function:
+            dp_id: int = device.function[function].dp_id
+            if dp_id != 0 and dp_id in device.local_strategy:
+                continue
+            if function in device.status:
+                continue
+            function_pop.append(function)
+        for function in function_pop:
+            device.function.pop(function)
 
     @staticmethod
     def _fix_unaligned_function_or_status_range(device: XTDevice):
@@ -251,7 +283,7 @@ class CloudFixes:
                         device.status_range[key]
                     )
                 )
-            device.status_range[key].type = tuya_util_parse_dptype(
+            device.status_range[key].type = TuyaDPType.try_parse(
                 str(device.status_range[key].type)
             )
         for key in device.function:
@@ -259,13 +291,13 @@ class CloudFixes:
                 device.function[key] = XTDeviceFunction.from_compatible_function(
                     device.function[key]
                 )
-            device.function[key].type = tuya_util_parse_dptype(
+            device.function[key].type = TuyaDPType.try_parse(
                 str(device.function[key].type)
             )
         for dpId in device.local_strategy:
             if config_item := device.local_strategy[dpId].get("config_item"):
                 if "valueType" in config_item and "valueDesc" in config_item:
-                    config_item["valueType"] = tuya_util_parse_dptype(
+                    config_item["valueType"] = TuyaDPType.try_parse(
                         config_item["valueType"]
                     )
                     if code := device.local_strategy[dpId].get("status_code"):
@@ -488,6 +520,80 @@ class CloudFixes:
             )
         else:
             return json.dumps({})
+
+    @staticmethod
+    def _align_uom(device: XTDevice):
+        all_codes: dict[str, int] = {}
+        for code in device.status_range:
+            if code not in all_codes:
+                all_codes[code] = 1
+            else:
+                all_codes[code] += 1
+        for code in device.function:
+            if code not in all_codes:
+                all_codes[code] = 1
+            else:
+                all_codes[code] += 1
+        for dp_item in device.local_strategy.values():
+            if code := dp_item.get("status_code"):
+                if code not in all_codes:
+                    all_codes[code] = 1
+                else:
+                    all_codes[code] += 1
+        for code in all_codes:
+            if all_codes[code] < 2:
+                continue
+            sr_value = None
+            sr_uom = None
+            fn_value = None
+            fn_uom = None
+            ls_value = None
+            ls_uom = None
+            dp_id = None
+            config_item = None
+            all_uom: list[str] = []
+            if code in device.status_range:
+                sr_value = json.loads(device.status_range[code].values)
+                dp_id = device.status_range[code].dp_id
+            if code in device.function:
+                fn_value = json.loads(device.function[code].values)
+                dp_id = device.function[code].dp_id
+            if dp_id is not None:
+                if dp_item := device.local_strategy.get(dp_id):
+                    if config_item := dp_item.get("config_item"):
+                        if value_descr := config_item.get("valueDesc"):
+                            ls_value = json.loads(value_descr)
+            if sr_value and "unit" in sr_value:
+                sr_uom = sr_value["unit"]
+                if sr_uom in UOM_MAPPING_DICT:
+                    sr_uom = UOM_MAPPING_DICT[sr_uom]
+                sr_value["unit"] = sr_uom
+                if sr_uom is not None and sr_uom not in all_uom:
+                    all_uom.append(sr_uom)
+            if fn_value and "unit" in fn_value:
+                fn_uom = fn_value["unit"]
+                if fn_uom in UOM_MAPPING_DICT:
+                    fn_uom = UOM_MAPPING_DICT[fn_uom]
+                fn_value["unit"] = fn_uom
+                if fn_uom is not None and fn_uom not in all_uom:
+                    all_uom.append(fn_uom)
+            if ls_value and "unit" in ls_value:
+                ls_uom = ls_value["unit"]
+                if ls_uom in UOM_MAPPING_DICT:
+                    ls_uom = UOM_MAPPING_DICT[ls_uom]
+                ls_value["unit"] = ls_uom
+                if ls_uom is not None and ls_uom not in all_uom:
+                    all_uom.append(ls_uom)
+            if len(all_uom) > 1:
+                LOGGER.warning(f"Multiple different uom found for code {code} on device {device.name}: {all_uom}")
+            if sr_value is not None:
+                device.status_range[code].values = json.dumps(sr_value)
+            if fn_value is not None:
+                device.function[code].values = json.dumps(fn_value)
+            if ls_value is not None and config_item is not None:
+                config_item["valueDesc"] = json.dumps(ls_value)
+            
+            
 
     @staticmethod
     def _align_valuedescr(device: XTDevice):
@@ -734,13 +840,13 @@ class CloudFixes:
                 return 1
             if (
                 value1[key] == TuyaDPType.RAW
-                and tuya_util_parse_dptype(value2[key]) is not None
+                and TuyaDPType.try_parse(value2[key]) is not None
                 and isinstance(value1[key], TuyaDPType)
             ):
                 return 2
             if (
                 value2[key] == TuyaDPType.RAW
-                and tuya_util_parse_dptype(value1[key]) is not None
+                and TuyaDPType.try_parse(value1[key]) is not None
                 and isinstance(value2[key], TuyaDPType)
             ):
                 return 1
@@ -789,6 +895,36 @@ class CloudFixes:
                         mappings[str(True)] = mappings["true"]
 
     @staticmethod
+    def _fix_missing_range_values_using_data_model(device: XTDevice):
+        for service in device.data_model.get("services", {}):
+            for property in service.get("properties", {}):
+                if (
+                    "abilityId" in property
+                ):
+                    dp_id = int(property["abilityId"])
+                    typeSpec = property.get("typeSpec", {})
+                    if dp_id not in device.local_strategy:
+                        continue
+                    local_strategy = device.local_strategy[dp_id]
+                    config_item: dict[str, Any] | None = local_strategy.get("config_item", None)
+                    if config_item is None:
+                        continue
+                    if config_item.get("valueType", None) != "Enum":
+                        continue
+                    valueDesc = config_item.get("valueDesc")
+                    if valueDesc is None:
+                        continue
+                    value_dict: dict[str, Any] = json.loads(valueDesc)
+                    valueDescr_range: list = value_dict.get("range", [])
+                    for range_value in typeSpec.get("range", []):
+                        if range_value not in valueDescr_range:
+                            valueDescr_range.append(range_value)
+                    value_dict["range"] = valueDescr_range
+                    config_item["valueDesc"] = json.dumps(value_dict)
+                    
+
+    
+    @staticmethod
     def _fix_missing_range_values_using_local_strategy(device: XTDevice):
         for local_strategy in device.local_strategy.values():
             status_code = local_strategy.get("status_code", None)
@@ -802,11 +938,11 @@ class CloudFixes:
                     continue
                 if valueDesc := config_item.get("valueDesc", None):
                     value_dict = json.loads(valueDesc)
-                    if valueDescr_range := value_dict.get("range", {}):
+                    if valueDescr_range := value_dict.get("range", []):
                         if status_range := device.status_range.get(status_code, None):
                             if status_range_values := json.loads(status_range.values):
                                 status_range_range_dict: list = status_range_values.get(
-                                    "range", {}
+                                    "range", []
                                 )
                                 new_range_list: list = []
                                 for new_range_value in valueDescr_range:
@@ -819,7 +955,7 @@ class CloudFixes:
                         if function := device.function.get(status_code, None):
                             if function_values := json.loads(function.values):
                                 function_range_dict: list = function_values.get(
-                                    "range", {}
+                                    "range", []
                                 )
                                 new_range_list: list = []
                                 for new_range_value in valueDescr_range:

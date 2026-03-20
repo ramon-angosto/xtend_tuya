@@ -3,3 +3,8 @@
 *.logs
 __pycache__
 .ruff_cache
+.vscode/
+.idea/
+*.swp
+*.bak
+.DS_Store

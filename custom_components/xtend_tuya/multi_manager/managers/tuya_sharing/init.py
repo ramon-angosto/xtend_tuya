@@ -73,6 +73,7 @@ from ....const import (
     TUYA_HA_SIGNAL_UPDATE_ENTITY,
     XTDeviceSourcePriority,
     LOGGER,
+    XTLockingMechanism,
 )
 
 
@@ -357,36 +358,41 @@ class XTTuyaSharingDeviceManagerInterface(XTDeviceManagerInterface):
         ):
             return get_tuya_platform_descriptors(platform)
 
-    def send_commands(self, device_id: str, commands: list[dict[str, Any]]) -> bool:
+    def send_command(self, device_id: str, command: dict[str, Any], reverse_filters: bool = False) -> bool:
         if self.sharing_account is None:
             return False
         regular_commands: list[dict[str, Any]] = []
         device = self.multi_manager.device_map.get(device_id)
-        return_result = True
         if device is None:
             return False
-        for command in commands:
-            command_code: str = command["code"]
-            """command_value: str = command["value"]"""
+        command_code = command.get("code")
+        if command_code is None:
+            return False
 
-            # Filter commands that require the use of OpenAPI
-            if dpId := self.multi_manager._read_dpId_from_code(command_code, device):
-                if device.local_strategy[dpId].get("use_open_api", False):
-                    return_result = False  # Part of the commands have not been issues, forward to other managers
-                    continue
-            regular_commands.append(command)
+        # Filter commands that require the use of OpenAPI
+        if dpId := self.multi_manager._read_dpId_from_code(command_code, device):
+            use_open_api: bool = device.local_strategy[dpId].get("use_open_api", False)
+            if use_open_api:
+                if reverse_filters is False:
+                    return False
+            else:
+                if reverse_filters is True:
+                    return False
+        regular_commands.append(command)
 
         try:
             if regular_commands:
                 self.sharing_account.device_manager.send_commands(
                     device_id, regular_commands
                 )
-            return return_result
+            return True
         except Exception as e:
-            LOGGER.warning(
-                f"[Sharing]Send command failed, device id: {device_id}, commands: {commands}, exception: {e}"
+            self.multi_manager.device_watcher.report_message(
+                device_id,
+                f"[Sharing]Send command failed, device id: {device_id}, commands: {regular_commands}, exception: {e}",
+                device=device,
             )
-            return False
+        return False
 
     def convert_to_xt_device(
         self, device: Any, device_source_priority: XTDeviceSourcePriority | None = None
@@ -399,11 +405,11 @@ class XTTuyaSharingDeviceManagerInterface(XTDeviceManagerInterface):
             device_new.regular_tuya_device = device
         return device_new
 
-    def send_lock_unlock_command(self, device: XTDevice, lock: bool) -> bool:
+    def send_lock_unlock_command(self, device: XTDevice, lock: bool, force_unlock_mechanism: XTLockingMechanism = XTLockingMechanism.AUTO) -> bool:
         if self.sharing_account is None:
             return False
         return self.sharing_account.device_manager.send_lock_unlock_command(
-            device, lock
+            device, lock, force_unlock_mechanism
         )
 
     def call_api(

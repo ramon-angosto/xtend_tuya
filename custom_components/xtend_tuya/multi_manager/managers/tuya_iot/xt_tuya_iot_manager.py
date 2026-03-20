@@ -25,6 +25,7 @@ from ....const import (
     XTIRHubInformation,
     XTIRRemoteInformation,
     XTIRRemoteKeysInformation,
+    XTLockingMechanism,
 )
 from ...shared.shared_classes import (
     XTDevice,
@@ -51,7 +52,7 @@ from .xt_tuya_iot_device import (
     XTSmartHomeDeviceManage,
 )
 from ....ha_tuya_integration.tuya_integration_imports import (
-    tuya_util_parse_dptype,
+    TuyaDPType,
 )
 from .xt_tuya_iot_mq import (
     XTIOTOpenMQ,
@@ -336,14 +337,13 @@ class XTIOTDeviceManager(TuyaDeviceManager):
         if not response.get("success") or not response2.get("success"):
             LOGGER.warning(f"Response1: {response}")
             LOGGER.warning(f"Response2: {response2}")
-            return
 
-        if response2.get("success"):
+        if response2.get("success", False):
             result = response2.get("result", {})
             data_model = json.loads(result.get("model", "{}"))
             device_properties.data_model = data_model
-            for service in data_model["services"]:
-                for property in service["properties"]:
+            for service in data_model.get("services", {}):
+                for property in service.get("properties", {}):
                     if (
                         "abilityId" in property
                         and "code" in property
@@ -353,7 +353,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                         dp_id = int(property["abilityId"])
                         code = property["code"]
                         typeSpec = property["typeSpec"]
-                        real_type = tuya_util_parse_dptype(typeSpec["type"])
+                        real_type = TuyaDPType.try_parse(typeSpec["type"])
                         access_mode = property["accessMode"]
                         typeSpec.pop("type")
                         typeSpec_json = json.dumps(typeSpec)
@@ -384,7 +384,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                             if code in device_properties.function:
                                 device_properties.function[code].dp_id = dp_id
 
-        if response.get("success"):
+        if response.get("success", False):
             result = response.get("result", {})
             for dp_property in result["properties"]:
                 if "dp_id" not in dp_property:
@@ -401,7 +401,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                             property_update = False
                         else:
                             property_update = True
-                        real_type = tuya_util_parse_dptype(dp_type)
+                        real_type = TuyaDPType.try_parse(dp_type)
                         device_properties.local_strategy[dp_id] = {
                             "value_convert": "default",
                             "status_code": code,
@@ -467,40 +467,39 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                     device_id,
                     f"Sending property update, payload: {json.dumps({'properties': property_str})}",
                 )
-                self.api.post(
+                result = self.api.post(
                     f"/v2.0/cloud/thing/{device_id}/shadow/properties/issue",
                     {"properties": property_str},
                 )
+                if result.get("success") is False:
+                    raise Exception(f"send_property_update error:({properties}): {result}")
 
-    def send_lock_unlock_command(self, device: XTDevice, lock: bool) -> bool:
+    def send_lock_unlock_command(self, device: XTDevice, lock: bool, force_unlock_mechanism: XTLockingMechanism = XTLockingMechanism.AUTO) -> bool:
         self.multi_manager.device_watcher.report_message(
-            device.id, f"Sending lock/unlock command open: {open}"
+            device.id, f"Sending lock/unlock command open: {lock}"
         )
-        return self.send_lock_unlock_command_multi_api(device, lock)
+        return self.send_lock_unlock_command_multi_api(device, lock, force_unlock_mechanism)
 
-    def send_lock_unlock_command_multi_api(
-        self, device: XTDevice, lock: bool, api: XTIOTOpenAPI | None = None
-    ) -> bool:
-        if api is None:
-            if self.send_lock_unlock_command_multi_api(device, lock, self.non_user_api):
-                return True
-            else:
-                return self.send_lock_unlock_command_multi_api(device, lock, self.api)
+    def _lock_unlock_command_door_operate(self, device: XTDevice, lock: bool, api: XTIOTOpenAPI, supported_unlock_types: list[str]) -> bool:
         if lock:
             open = "false"
         else:
             open = "true"
-        supported_unlock_types = self.get_supported_unlock_types(device, api)
         if "remoteUnlockWithoutPwd" in supported_unlock_types:
-            if self.call_door_operate(device, open, api):
-                return True
+            return self.call_door_operate(device, open, api)
+        return False
+    
+    def _lock_unlock_command_door_open(self, device: XTDevice, lock: bool, api: XTIOTOpenAPI, supported_unlock_types: list[str]) -> bool:
+        if "remoteUnlockWithoutPwd" in supported_unlock_types:
             if lock:
                 # Locking of the door
-                pass
+                return False
             else:
                 # Unlocking of the door
-                if self.call_door_open(device, api):
-                    return True
+                return self.call_door_open(device, api)
+        return False
+    
+    def _lock_unlock_command_dpcode_command(self, device: XTDevice, lock: bool, api: XTIOTOpenAPI) -> bool:
         if manual_unlock_code := cast(
             list[XTDPCode],
             device.get_preference(
@@ -509,15 +508,41 @@ class XTIOTDeviceManager(TuyaDeviceManager):
         ):
             commands: list[dict[str, Any]] = []
             for dpcode in manual_unlock_code:
-                if status_value := device.status.get(dpcode):
-                    if not isinstance(status_value, bool):
-                        commands.append({"code": dpcode, "value": status_value})
-                    else:
-                        commands.append({"code": dpcode, "value": not lock})
+                status_value = device.status.get(dpcode)
+                if status_value is not None and not isinstance(status_value, bool):
+                    #Status value can sometimes be a string, in that case we want to send that string to the cloud
+                    commands.append({"code": dpcode, "value": status_value})
                 else:
+                    #Otherwise, we want to send the lock/unlock command as a boolean
                     commands.append({"code": dpcode, "value": not lock})
-            self.multi_manager.send_commands(device_id=device.id, commands=commands)
-            return True  # Assume that the command worked...
+            return self.multi_manager.send_commands(device_id=device.id, commands=commands)
+        return False
+
+    def send_lock_unlock_command_multi_api(
+        self, device: XTDevice, lock: bool, force_locking_mechanism: XTLockingMechanism = XTLockingMechanism.AUTO, api: XTIOTOpenAPI | None = None
+    ) -> bool:
+        if api is None:
+            if self.send_lock_unlock_command_multi_api(device, lock, force_locking_mechanism, self.non_user_api):
+                return True
+            else:
+                return self.send_lock_unlock_command_multi_api(device, lock, force_locking_mechanism, self.api)
+        
+        match force_locking_mechanism:
+            case XTLockingMechanism.DOOR_OPERATE:
+                return self._lock_unlock_command_door_operate(device, lock, api, self.get_supported_unlock_types(device, api))
+            case XTLockingMechanism.DOOR_OPEN:
+                return self._lock_unlock_command_door_open(device, lock, api, self.get_supported_unlock_types(device, api))
+            case XTLockingMechanism.DPCODE_COMMAND:
+                return self._lock_unlock_command_dpcode_command(device, lock, api)
+            case _:
+                # Default to AUTO behavior
+                unlock_types = self.get_supported_unlock_types(device, api)
+                if self._lock_unlock_command_door_operate(device, lock, api, unlock_types):
+                    return True
+                if self._lock_unlock_command_door_open(device, lock, api, unlock_types):
+                    return True
+                if self._lock_unlock_command_dpcode_command(device, lock, api):
+                    return True
         return False
 
     def test_lock_api_subscription(

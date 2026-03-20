@@ -21,6 +21,7 @@ from ....const import (
     XTIRHubInformation,
     XTIRRemoteInformation,
     XTIRRemoteKeysInformation,
+    XTLockingMechanism,
 )
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
@@ -34,7 +35,7 @@ class XTDeviceManagerAPIInterface(ABC):
     ) -> dict[str, Any] | None:
         pass
 
-    def send_commands(self, device_id: str, commands: list[dict[str, Any]]) -> bool:
+    def send_command(self, device_id: str, command: dict[str, Any], reverse_filters: bool = False) -> bool:
         return False
 
     @abstractmethod
@@ -220,7 +221,7 @@ class XTDeviceManagerMQTTManagementInterface(ABC):
 
 
 class XTDeviceManagerLockManagementInterface(ABC):
-    def send_lock_unlock_command(self, device: shared.XTDevice, lock: bool) -> bool:
+    def send_lock_unlock_command(self, device: shared.XTDevice, lock: bool, force_unlock_mechanism: XTLockingMechanism = XTLockingMechanism.AUTO) -> bool:
         return False
 
 
