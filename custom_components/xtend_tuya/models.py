@@ -6,6 +6,9 @@ from typing import Any, Optional
 from .ha_tuya_integration.tuya_integration_imports import (
     TuyaDPCodeIntegerWrapper,
     TuyaCustomerDevice,
+    TuyaDPCodeTypeInformationWrapper,
+    TuyaIntegerTypeInformation,
+    TuyaDPType,
     tuya_type_information_should_log_warning,
 )
 from .const import (
