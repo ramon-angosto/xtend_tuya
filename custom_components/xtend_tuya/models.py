@@ -136,17 +136,29 @@ class XTDPCodeBitmapLabelsWrapper(TuyaDPCodeTypeInformationWrapper[TuyaIntegerTy
                 step=1,
                 unit="",
                 type_data=type_data,
+                report_type="ro",
             )
         except TypeError:
-            # Backward compatibility with older HA versions that did not require type_data
-            type_info = TuyaIntegerTypeInformation(
-                dpcode=dpcode,
-                min=0,
-                max=max_int,
-                scale=0,
-                step=1,
-                unit="",
-            )
+            try:
+                type_info = TuyaIntegerTypeInformation(
+                    dpcode=dpcode,
+                    min=0,
+                    max=max_int,
+                    scale=0,
+                    step=1,
+                    unit="",
+                    type_data=type_data,
+                )
+            except TypeError:
+                # Backward compatibility with older HA versions that did not require type_data
+                type_info = TuyaIntegerTypeInformation(
+                    dpcode=dpcode,
+                    min=0,
+                    max=max_int,
+                    scale=0,
+                    step=1,
+                    unit="",
+                )
 
         return cls(dpcode, type_info, labels=labels)
 
